@@ -26,7 +26,7 @@ COPY packages/types/ ./packages/types/
 COPY packages/validators/ ./packages/validators/
 COPY apps/api/ ./apps/api/
 # Generate Prisma client into node_modules
-RUN pnpm --filter @quadrik/api exec prisma generate
+RUN pnpm --filter @quadrik/api exec prisma generate --schema ../../prisma/schema.prisma
 # NestJS webpack build — bundles workspace packages into dist/main.js
 RUN pnpm --filter @quadrik/api build
 
