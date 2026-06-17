@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   transpilePackages: ['@quadrik/ui', '@quadrik/design-tokens'],
   images: {
     remotePatterns: [
