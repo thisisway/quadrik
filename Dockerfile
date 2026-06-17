@@ -21,14 +21,15 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
-# Root package.json needed so Prisma can detect project root and skip auto-install
-COPY package.json pnpm-workspace.yaml ./
 COPY prisma/ ./prisma/
 COPY packages/types/ ./packages/types/
 COPY packages/validators/ ./packages/validators/
 COPY apps/api/ ./apps/api/
-# Generate Prisma client into node_modules
-RUN pnpm --filter @quadrik/api exec prisma generate --schema ../../prisma/schema.prisma
+# Run from apps/api so Prisma detects its own package.json (has prisma in devDependencies)
+# and does not attempt auto-install
+WORKDIR /app/apps/api
+RUN ./node_modules/.bin/prisma generate --schema ../../prisma/schema.prisma
+WORKDIR /app
 # NestJS webpack build — bundles workspace packages into dist/main.js
 RUN pnpm --filter @quadrik/api build
 
