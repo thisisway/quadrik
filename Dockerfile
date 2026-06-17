@@ -33,13 +33,18 @@ RUN pnpm --filter @quadrik/api build
 
 # ── Stage 3: production image ─────────────────────────────────────────────────
 FROM node:20-alpine AS runner
-WORKDIR /app
+# Run from apps/api so Node resolves @prisma/client, @nestjs/* etc. from
+# apps/api/node_modules (pnpm workspace pattern)
+WORKDIR /app/apps/api
 ENV NODE_ENV=production
 
+# Root node_modules: workspace packages (@quadrik/types, @quadrik/validators)
+COPY --from=builder /app/node_modules /app/node_modules
+# App node_modules: @prisma/client, @nestjs/*, etc. + Prisma engine binary
+COPY --from=builder /app/apps/api/node_modules ./node_modules
+# Compiled TypeScript output
 COPY --from=builder /app/apps/api/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
-COPY apps/api/package.json .
+COPY apps/api/package.json ./package.json
 
 EXPOSE 3001
 CMD ["node", "dist/main.js"]
