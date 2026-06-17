@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --q-red: #EF3E3E;
+    --q-orange: #F47A32;
+    --q-yellow: #FFD43B;
+    --q-navy: #071B3A;
+    --q-blue: #0477BF;
+    --sand: #FFF9EC;
+    --sand-2: #EFE3C8;
+    --graphite: #222222;
+    --gray: #707070;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: theme('fontFamily.sans');
+    color: var(--graphite);
+    background-color: var(--sand);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}

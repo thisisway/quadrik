@@ -1,0 +1,722 @@
+// Quadrik — Prisma Schema
+// All model and field names in English.
+// Multi-tenant: every resource is scoped to a club_id.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserStatus {
+  active
+  inactive
+  blocked
+}
+
+enum Role {
+  SUPER_ADMIN
+  OWNER
+  MANAGER
+  RECEPTIONIST
+  FINANCE
+  TEACHER
+  ORGANIZER
+  PLAYER
+}
+
+enum ClubMemberStatus {
+  active
+  invited
+  inactive
+}
+
+enum ClubStatus {
+  active
+  inactive
+  suspended
+}
+
+enum CourtStatus {
+  active
+  inactive
+  maintenance
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+  no_show
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  overdue
+  cancelled
+  refunded
+}
+
+enum TournamentStatus {
+  draft
+  registration_open
+  in_progress
+  finished
+  cancelled
+}
+
+enum Visibility {
+  public
+  private
+}
+
+enum MatchStatus {
+  scheduled
+  in_progress
+  completed
+  cancelled
+  walkover
+}
+
+enum PlayerLevel {
+  beginner
+  intermediate
+  advanced
+}
+
+enum Gender {
+  male
+  female
+  mixed
+}
+
+enum TournamentFormat {
+  group_knockout
+  knockout
+  round_robin
+}
+
+enum RankingType {
+  manual
+  automatic
+}
+
+enum SubscriptionStatus {
+  active
+  past_due
+  cancelled
+  trialing
+}
+
+enum NotificationChannel {
+  in_app
+  email
+  push
+  whatsapp
+}
+
+enum ClassAttendanceStatus {
+  present
+  absent
+  justified
+  makeup
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id                String    @id @default(uuid())
+  name              String
+  email             String    @unique
+  phone             String?
+  password_hash     String
+  avatar_url        String?
+  status            UserStatus @default(active)
+  email_verified_at DateTime?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  profile           UserProfile?
+  club_memberships  ClubMember[]
+  created_bookings  Booking[]   @relation("BookingCreator")
+  cancelled_bookings Booking[]  @relation("BookingCanceller")
+  booking_participations BookingParticipant[]
+  notifications     Notification[]
+  files             File[]
+  payments_created  Payment[]   @relation("PaymentCreator")
+  payments          Payment[]   @relation("UserPayments")
+  audit_logs        AuditLog[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id             String       @id @default(uuid())
+  user_id        String       @unique
+  sport_level    PlayerLevel?
+  favorite_sports String[]
+  city           String?
+  state          String?      @db.Char(2)
+  bio            String?
+  created_at     DateTime     @default(now())
+  updated_at     DateTime     @updatedAt
+
+  user           User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+model Club {
+  id           String     @id @default(uuid())
+  name         String
+  slug         String     @unique
+  description  String?
+  logo_url     String?
+  cover_url    String?
+  phone        String?
+  email        String?
+  whatsapp     String?
+  website      String?
+  address      String?
+  city         String?
+  state        String?    @db.Char(2)
+  country      String     @default("BR") @db.Char(2)
+  zip_code     String?
+  sport_types  String[]
+  status       ClubStatus @default(active)
+  is_public    Boolean    @default(true)
+  settings     Json       @default("{}")
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @updatedAt
+
+  members      ClubMember[]
+  courts       Court[]
+  bookings     Booking[]
+  players      Player[]
+  teachers     Teacher[]
+  classes      Class[]
+  tournaments  Tournament[]
+  rankings     Ranking[]
+  payments     Payment[]
+  notifications Notification[]
+  audit_logs   AuditLog[]
+  subscription Subscription?
+  products     Product[]
+
+  @@map("clubs")
+}
+
+model ClubMember {
+  id          String           @id @default(uuid())
+  club_id     String
+  user_id     String
+  role        Role
+  status      ClubMemberStatus @default(invited)
+  invited_by  String?
+  joined_at   DateTime?
+  created_at  DateTime         @default(now())
+
+  club        Club             @relation(fields: [club_id], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([club_id, user_id])
+  @@map("club_members")
+}
+
+model Court {
+  id               String      @id @default(uuid())
+  club_id          String
+  name             String
+  sport_type       String
+  surface_type     String?
+  is_indoor        Boolean     @default(false)
+  player_capacity  Int         @default(4)
+  price_per_hour   Decimal     @db.Decimal(10, 2)
+  status           CourtStatus @default(active)
+  photo_url        String?
+  sort_order       Int         @default(0)
+  created_at       DateTime    @default(now())
+  updated_at       DateTime    @updatedAt
+
+  club             Club        @relation(fields: [club_id], references: [id], onDelete: Cascade)
+  schedules        CourtSchedule[]
+  bookings         Booking[]
+  matches          Match[]
+
+  @@map("courts")
+}
+
+model CourtSchedule {
+  id           String   @id @default(uuid())
+  court_id     String
+  day_of_week  Int
+  opens_at     String
+  closes_at    String
+  is_closed    Boolean  @default(false)
+  created_at   DateTime @default(now())
+
+  court        Court    @relation(fields: [court_id], references: [id], onDelete: Cascade)
+
+  @@map("court_schedules")
+}
+
+model Booking {
+  id                String        @id @default(uuid())
+  club_id           String
+  court_id          String
+  created_by_id     String
+  start_time        DateTime
+  end_time          DateTime
+  duration_minutes  Int
+  status            BookingStatus @default(pending)
+  price             Decimal       @db.Decimal(10, 2)
+  payment_status    PaymentStatus @default(pending)
+  payment_method    String?
+  notes             String?
+  cancelled_at      DateTime?
+  cancelled_by_id   String?
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+
+  club              Club          @relation(fields: [club_id], references: [id])
+  court             Court         @relation(fields: [court_id], references: [id])
+  created_by        User          @relation("BookingCreator", fields: [created_by_id], references: [id])
+  cancelled_by      User?         @relation("BookingCanceller", fields: [cancelled_by_id], references: [id])
+  participants      BookingParticipant[]
+  payments          Payment[]
+
+  @@index([club_id, court_id, start_time], name: "idx_bookings_club_court_start")
+  @@index([created_by_id], name: "idx_bookings_created_by")
+  @@index([status, start_time], name: "idx_bookings_status_date")
+  @@map("bookings")
+}
+
+model BookingParticipant {
+  id           String   @id @default(uuid())
+  booking_id   String
+  user_id      String?
+  guest_name   String?
+  is_host      Boolean  @default(false)
+  created_at   DateTime @default(now())
+
+  booking      Booking  @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  user         User?    @relation(fields: [user_id], references: [id])
+
+  @@map("booking_participants")
+}
+
+model Player {
+  id             String      @id @default(uuid())
+  user_id        String
+  club_id        String
+  level          PlayerLevel @default(beginner)
+  favorite_sport String?
+  status         String      @default("active")
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+
+  club               Club                    @relation(fields: [club_id], references: [id])
+  ranking_entries    RankingEntry[]
+  class_enrollments  ClassStudent[]
+  attendances        ClassAttendance[]
+  tournament_registrations TournamentRegistration[]
+  match_participations     MatchParticipant[]
+
+  @@map("players")
+}
+
+model Teacher {
+  id              String   @id @default(uuid())
+  user_id         String
+  club_id         String
+  sports          String[]
+  commission_rate Decimal  @db.Decimal(5, 2)
+  status          String   @default("active")
+  bio             String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  club            Club     @relation(fields: [club_id], references: [id])
+  classes         Class[]
+
+  @@map("teachers")
+}
+
+model Class {
+  id                String   @id @default(uuid())
+  club_id           String
+  teacher_id        String
+  court_id          String?
+  name              String
+  sport_type        String
+  level             PlayerLevel
+  max_students      Int
+  price_per_month   Decimal  @db.Decimal(10, 2)
+  schedule          Json
+  status            String   @default("active")
+  start_date        DateTime @db.Date
+  end_date          DateTime? @db.Date
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  club              Club     @relation(fields: [club_id], references: [id])
+  teacher           Teacher  @relation(fields: [teacher_id], references: [id])
+  students          ClassStudent[]
+  attendances       ClassAttendance[]
+  payments          Payment[]
+
+  @@map("classes")
+}
+
+model ClassStudent {
+  id          String   @id @default(uuid())
+  class_id    String
+  player_id   String
+  status      String   @default("active")
+  enrolled_at DateTime @db.Date
+  created_at  DateTime @default(now())
+
+  class       Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  player      Player   @relation(fields: [player_id], references: [id])
+
+  @@unique([class_id, player_id])
+  @@map("class_students")
+}
+
+model ClassAttendance {
+  id          String                @id @default(uuid())
+  class_id    String
+  player_id   String
+  class_date  DateTime              @db.Date
+  status      ClassAttendanceStatus
+  notes       String?
+  created_at  DateTime              @default(now())
+
+  class       Class   @relation(fields: [class_id], references: [id])
+  player      Player  @relation(fields: [player_id], references: [id])
+
+  @@unique([class_id, player_id, class_date])
+  @@map("class_attendance")
+}
+
+model Tournament {
+  id                  String           @id @default(uuid())
+  club_id             String
+  name                String
+  slug                String           @unique
+  description         String?
+  sport_type          String
+  cover_url           String?
+  start_date          DateTime         @db.Date
+  end_date            DateTime         @db.Date
+  registration_start  DateTime         @db.Date
+  registration_end    DateTime         @db.Date
+  status              TournamentStatus @default(draft)
+  visibility          Visibility       @default(public)
+  requires_payment    Boolean          @default(false)
+  regulations         String?
+  created_at          DateTime         @default(now())
+  updated_at          DateTime         @updatedAt
+
+  club                Club             @relation(fields: [club_id], references: [id])
+  categories          TournamentCategory[]
+  registrations       TournamentRegistration[]
+  matches             Match[]
+
+  @@map("tournaments")
+}
+
+model TournamentCategory {
+  id                   String           @id @default(uuid())
+  tournament_id        String
+  name                 String
+  sport_type           String
+  gender               Gender
+  format               TournamentFormat
+  max_registrations    Int
+  registration_price   Decimal          @db.Decimal(10, 2)
+  created_at           DateTime         @default(now())
+
+  tournament           Tournament       @relation(fields: [tournament_id], references: [id], onDelete: Cascade)
+  registrations        TournamentRegistration[]
+  matches              Match[]
+
+  @@map("tournament_categories")
+}
+
+model TournamentRegistration {
+  id            String   @id @default(uuid())
+  tournament_id String
+  category_id   String
+  player_id     String
+  partner_id    String?
+  status        String   @default("pending")
+  payment_id    String?
+  registered_at DateTime @default(now())
+  created_at    DateTime @default(now())
+
+  tournament    Tournament         @relation(fields: [tournament_id], references: [id])
+  category      TournamentCategory @relation(fields: [category_id], references: [id])
+  player        Player             @relation(fields: [player_id], references: [id])
+  payment       Payment?           @relation(fields: [payment_id], references: [id])
+
+  @@map("tournament_registrations")
+}
+
+model Match {
+  id            String      @id @default(uuid())
+  tournament_id String?
+  category_id   String?
+  club_id       String
+  court_id      String?
+  round         String?
+  match_number  Int?
+  start_time    DateTime?
+  status        MatchStatus @default(scheduled)
+  score         Json?
+  winner_id     String?
+  is_walkover   Boolean     @default(false)
+  notes         String?
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
+
+  tournament    Tournament?         @relation(fields: [tournament_id], references: [id])
+  category      TournamentCategory? @relation(fields: [category_id], references: [id])
+  court         Court?              @relation(fields: [court_id], references: [id])
+  participants  MatchParticipant[]
+
+  @@index([tournament_id, status], name: "idx_matches_tournament_status")
+  @@map("matches")
+}
+
+model MatchParticipant {
+  id         String  @id @default(uuid())
+  match_id   String
+  player_id  String
+  side       String
+  partner_id String?
+  created_at DateTime @default(now())
+
+  match      Match   @relation(fields: [match_id], references: [id], onDelete: Cascade)
+  player     Player  @relation(fields: [player_id], references: [id])
+
+  @@map("match_participants")
+}
+
+model Ranking {
+  id                  String      @id @default(uuid())
+  club_id             String
+  name                String
+  sport_type          String
+  category            String?
+  type                RankingType @default(manual)
+  is_public           Boolean     @default(true)
+  season_start        DateTime?   @db.Date
+  season_end          DateTime?   @db.Date
+  last_calculated_at  DateTime?
+  created_at          DateTime    @default(now())
+  updated_at          DateTime    @updatedAt
+
+  club                Club        @relation(fields: [club_id], references: [id])
+  entries             RankingEntry[]
+
+  @@index([club_id], name: "idx_rankings_club")
+  @@map("rankings")
+}
+
+model RankingEntry {
+  id                 String   @id @default(uuid())
+  ranking_id         String
+  player_id          String
+  position           Int
+  previous_position  Int?
+  points             Decimal  @db.Decimal(10, 2)
+  tournaments_played Int      @default(0)
+  wins               Int      @default(0)
+  losses             Int      @default(0)
+  updated_at         DateTime @updatedAt
+
+  ranking            Ranking  @relation(fields: [ranking_id], references: [id], onDelete: Cascade)
+  player             Player   @relation(fields: [player_id], references: [id])
+
+  @@unique([ranking_id, player_id])
+  @@index([ranking_id, position], name: "idx_ranking_entries_position")
+  @@map("ranking_entries")
+}
+
+model Payment {
+  id                          String        @id @default(uuid())
+  club_id                     String
+  user_id                     String
+  booking_id                  String?
+  subscription_id             String?
+  tournament_registration_id  String?
+  class_id                    String?
+  description                 String
+  amount                      Decimal       @db.Decimal(10, 2)
+  status                      PaymentStatus @default(pending)
+  method                      String?
+  due_date                    DateTime      @db.Date
+  paid_at                     DateTime?
+  notes                       String?
+  created_by_id               String
+  created_at                  DateTime      @default(now())
+  updated_at                  DateTime      @updatedAt
+
+  club                        Club          @relation(fields: [club_id], references: [id])
+  user                        User          @relation("UserPayments", fields: [user_id], references: [id])
+  booking                     Booking?      @relation(fields: [booking_id], references: [id])
+  class                       Class?        @relation(fields: [class_id], references: [id])
+  created_by                  User          @relation("PaymentCreator", fields: [created_by_id], references: [id])
+  tournament_registrations    TournamentRegistration[]
+
+  @@index([club_id, status, due_date], name: "idx_payments_club_status_due")
+  @@index([user_id], name: "idx_payments_user_id")
+  @@map("payments")
+}
+
+model Plan {
+  id                         String   @id @default(uuid())
+  name                       String
+  price_monthly              Decimal  @db.Decimal(10, 2)
+  price_yearly               Decimal  @db.Decimal(10, 2)
+  max_courts                 Int
+  max_team_members           Int
+  max_tournaments_per_month  Int
+  features                   Json     @default("{}")
+  is_active                  Boolean  @default(true)
+  created_at                 DateTime @default(now())
+
+  subscriptions              Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                    String             @id @default(uuid())
+  club_id               String             @unique
+  plan_id               String
+  status                SubscriptionStatus @default(trialing)
+  current_period_start  DateTime           @db.Date
+  current_period_end    DateTime           @db.Date
+  trial_end             DateTime?          @db.Date
+  cancelled_at          DateTime?
+  created_at            DateTime           @default(now())
+  updated_at            DateTime           @updatedAt
+
+  club                  Club               @relation(fields: [club_id], references: [id])
+  plan                  Plan               @relation(fields: [plan_id], references: [id])
+
+  @@map("subscriptions")
+}
+
+model Notification {
+  id         String              @id @default(uuid())
+  user_id    String
+  club_id    String?
+  type       String
+  title      String
+  body       String
+  data       Json?
+  is_read    Boolean             @default(false)
+  read_at    DateTime?
+  channel    NotificationChannel
+  sent_at    DateTime?
+  created_at DateTime            @default(now())
+
+  user       User                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  club       Club?               @relation(fields: [club_id], references: [id])
+
+  @@index([user_id, is_read], name: "idx_notifications_user_unread")
+  @@map("notifications")
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  club_id     String
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  stock       Int?
+  category    String?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  club        Club        @relation(fields: [club_id], references: [id])
+  order_items OrderItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id         String   @id @default(uuid())
+  club_id    String
+  user_id    String
+  total      Decimal  @db.Decimal(10, 2)
+  status     String   @default("pending")
+  payment_id String?
+  created_at DateTime @default(now())
+
+  items      OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String   @id @default(uuid())
+  order_id   String
+  product_id String
+  quantity   Int
+  unit_price Decimal  @db.Decimal(10, 2)
+  created_at DateTime @default(now())
+
+  order      Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product    Product @relation(fields: [product_id], references: [id])
+
+  @@map("order_items")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  club_id     String?
+  user_id     String?
+  action      String
+  entity_type String
+  entity_id   String
+  before      Json?
+  after       Json?
+  ip_address  String?
+  user_agent  String?
+  created_at  DateTime @default(now())
+
+  club        Club?    @relation(fields: [club_id], references: [id])
+  user        User?    @relation(fields: [user_id], references: [id])
+
+  @@index([entity_type, entity_id], name: "idx_audit_logs_entity")
+  @@index([club_id, created_at], name: "idx_audit_logs_club_created")
+  @@map("audit_logs")
+}
+
+model File {
+  id               String   @id @default(uuid())
+  uploaded_by_id   String
+  club_id          String?
+  original_name    String
+  storage_key      String
+  url              String
+  mime_type        String
+  size_bytes       BigInt
+  created_at       DateTime @default(now())
+
+  uploaded_by      User     @relation(fields: [uploaded_by_id], references: [id])
+
+  @@map("files")
+}
