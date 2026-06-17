@@ -10,7 +10,7 @@ RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 # ── Stage 1: install dependencies ─────────────────────────────────────────────
 FROM base AS deps
 WORKDIR /app
-COPY package.json pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/types/package.json ./packages/types/
 COPY packages/validators/package.json ./packages/validators/
