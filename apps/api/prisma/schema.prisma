@@ -1,6 +1,7 @@
 // Quadrik — Prisma Schema
-// All model and field names in English.
-// Multi-tenant: every resource is scoped to a club_id.
+// Field names: camelCase (TypeScript-idiomatic), mapped to snake_case DB columns via @map().
+// All table and column names in the database are English/snake_case.
+// Multi-tenant: every resource is scoped to a clubId.
 
 generator client {
   provider = "prisma-client-js"
@@ -132,591 +133,591 @@ enum ClassAttendanceStatus {
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model User {
-  id                String    @id @default(uuid())
-  name              String
-  email             String    @unique
-  phone             String?
-  password_hash     String
-  avatar_url        String?
-  status            UserStatus @default(active)
-  email_verified_at DateTime?
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
+  id              String     @id @default(uuid())
+  name            String
+  email           String     @unique
+  phone           String?
+  passwordHash    String     @map("password_hash")
+  avatarUrl       String?    @map("avatar_url")
+  status          UserStatus @default(active)
+  emailVerifiedAt DateTime?  @map("email_verified_at")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
 
-  profile           UserProfile?
-  club_memberships  ClubMember[]
-  created_bookings  Booking[]   @relation("BookingCreator")
-  cancelled_bookings Booking[]  @relation("BookingCanceller")
-  booking_participations BookingParticipant[]
-  notifications     Notification[]
-  files             File[]
-  payments_created  Payment[]   @relation("PaymentCreator")
-  payments          Payment[]   @relation("UserPayments")
-  audit_logs        AuditLog[]
+  profile               UserProfile?
+  memberships           ClubMember[]
+  createdBookings       Booking[]            @relation("BookingCreator")
+  cancelledBookings     Booking[]            @relation("BookingCanceller")
+  bookingParticipations BookingParticipant[]
+  notifications         Notification[]
+  files                 File[]
+  paymentsCreated       Payment[]            @relation("PaymentCreator")
+  payments              Payment[]            @relation("UserPayments")
+  auditLogs             AuditLog[]
 
   @@map("users")
 }
 
 model UserProfile {
   id             String       @id @default(uuid())
-  user_id        String       @unique
-  sport_level    PlayerLevel?
-  favorite_sports String[]
+  userId         String       @unique @map("user_id")
+  sportLevel     PlayerLevel? @map("sport_level")
+  favoriteSports String[]     @map("favorite_sports")
   city           String?
   state          String?      @db.Char(2)
   bio            String?
-  created_at     DateTime     @default(now())
-  updated_at     DateTime     @updatedAt
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
 
-  user           User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_profiles")
 }
 
 model Club {
-  id           String     @id @default(uuid())
-  name         String
-  slug         String     @unique
-  description  String?
-  logo_url     String?
-  cover_url    String?
-  phone        String?
-  email        String?
-  whatsapp     String?
-  website      String?
-  address      String?
-  city         String?
-  state        String?    @db.Char(2)
-  country      String     @default("BR") @db.Char(2)
-  zip_code     String?
-  sport_types  String[]
-  status       ClubStatus @default(active)
-  is_public    Boolean    @default(true)
-  settings     Json       @default("{}")
-  created_at   DateTime   @default(now())
-  updated_at   DateTime   @updatedAt
+  id          String     @id @default(uuid())
+  name        String
+  slug        String     @unique
+  description String?
+  logoUrl     String?    @map("logo_url")
+  coverUrl    String?    @map("cover_url")
+  phone       String?
+  email       String?
+  whatsapp    String?
+  website     String?
+  address     String?
+  city        String?
+  state       String?    @db.Char(2)
+  country     String     @default("BR") @db.Char(2)
+  zipCode     String?    @map("zip_code")
+  sportTypes  String[]   @map("sport_types")
+  status      ClubStatus @default(active)
+  isPublic    Boolean    @default(true) @map("is_public")
+  settings    Json       @default("{}")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
 
-  members      ClubMember[]
-  courts       Court[]
-  bookings     Booking[]
-  players      Player[]
-  teachers     Teacher[]
-  classes      Class[]
-  tournaments  Tournament[]
-  rankings     Ranking[]
-  payments     Payment[]
+  members       ClubMember[]
+  courts        Court[]
+  bookings      Booking[]
+  players       Player[]
+  teachers      Teacher[]
+  classes       Class[]
+  tournaments   Tournament[]
+  rankings      Ranking[]
+  payments      Payment[]
   notifications Notification[]
-  audit_logs   AuditLog[]
-  subscription Subscription?
-  products     Product[]
+  auditLogs     AuditLog[]
+  subscription  Subscription?
+  products      Product[]
 
   @@map("clubs")
 }
 
 model ClubMember {
-  id          String           @id @default(uuid())
-  club_id     String
-  user_id     String
-  role        Role
-  status      ClubMemberStatus @default(invited)
-  invited_by  String?
-  joined_at   DateTime?
-  created_at  DateTime         @default(now())
+  id        String           @id @default(uuid())
+  clubId    String           @map("club_id")
+  userId    String           @map("user_id")
+  role      Role
+  status    ClubMemberStatus @default(invited)
+  invitedBy String?          @map("invited_by")
+  joinedAt  DateTime?        @map("joined_at")
+  createdAt DateTime         @default(now()) @map("created_at")
 
-  club        Club             @relation(fields: [club_id], references: [id], onDelete: Cascade)
-  user        User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([club_id, user_id])
+  @@unique([clubId, userId])
   @@map("club_members")
 }
 
 model Court {
-  id               String      @id @default(uuid())
-  club_id          String
-  name             String
-  sport_type       String
-  surface_type     String?
-  is_indoor        Boolean     @default(false)
-  player_capacity  Int         @default(4)
-  price_per_hour   Decimal     @db.Decimal(10, 2)
-  status           CourtStatus @default(active)
-  photo_url        String?
-  sort_order       Int         @default(0)
-  created_at       DateTime    @default(now())
-  updated_at       DateTime    @updatedAt
+  id             String      @id @default(uuid())
+  clubId         String      @map("club_id")
+  name           String
+  sportType      String      @map("sport_type")
+  surfaceType    String?     @map("surface_type")
+  isIndoor       Boolean     @default(false) @map("is_indoor")
+  playerCapacity Int         @default(4) @map("player_capacity")
+  pricePerHour   Decimal     @map("price_per_hour") @db.Decimal(10, 2)
+  status         CourtStatus @default(active)
+  photoUrl       String?     @map("photo_url")
+  sortOrder      Int         @default(0) @map("sort_order")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
 
-  club             Club        @relation(fields: [club_id], references: [id], onDelete: Cascade)
-  schedules        CourtSchedule[]
-  bookings         Booking[]
-  matches          Match[]
+  club      Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  schedules CourtSchedule[]
+  bookings  Booking[]
+  matches   Match[]
 
   @@map("courts")
 }
 
 model CourtSchedule {
-  id           String   @id @default(uuid())
-  court_id     String
-  day_of_week  Int
-  opens_at     String
-  closes_at    String
-  is_closed    Boolean  @default(false)
-  created_at   DateTime @default(now())
+  id        String   @id @default(uuid())
+  courtId   String   @map("court_id")
+  dayOfWeek Int      @map("day_of_week")
+  opensAt   String   @map("opens_at")
+  closesAt  String   @map("closes_at")
+  isClosed  Boolean  @default(false) @map("is_closed")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  court        Court    @relation(fields: [court_id], references: [id], onDelete: Cascade)
+  court Court @relation(fields: [courtId], references: [id], onDelete: Cascade)
 
   @@map("court_schedules")
 }
 
 model Booking {
-  id                String        @id @default(uuid())
-  club_id           String
-  court_id          String
-  created_by_id     String
-  start_time        DateTime
-  end_time          DateTime
-  duration_minutes  Int
-  status            BookingStatus @default(pending)
-  price             Decimal       @db.Decimal(10, 2)
-  payment_status    PaymentStatus @default(pending)
-  payment_method    String?
-  notes             String?
-  cancelled_at      DateTime?
-  cancelled_by_id   String?
-  created_at        DateTime      @default(now())
-  updated_at        DateTime      @updatedAt
+  id              String        @id @default(uuid())
+  clubId          String        @map("club_id")
+  courtId         String        @map("court_id")
+  createdById     String        @map("created_by_id")
+  startTime       DateTime      @map("start_time")
+  endTime         DateTime      @map("end_time")
+  durationMinutes Int           @map("duration_minutes")
+  status          BookingStatus @default(pending)
+  price           Decimal       @db.Decimal(10, 2)
+  paymentStatus   PaymentStatus @default(pending) @map("payment_status")
+  paymentMethod   String?       @map("payment_method")
+  notes           String?
+  cancelledAt     DateTime?     @map("cancelled_at")
+  cancelledById   String?       @map("cancelled_by_id")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
-  club              Club          @relation(fields: [club_id], references: [id])
-  court             Court         @relation(fields: [court_id], references: [id])
-  created_by        User          @relation("BookingCreator", fields: [created_by_id], references: [id])
-  cancelled_by      User?         @relation("BookingCanceller", fields: [cancelled_by_id], references: [id])
-  participants      BookingParticipant[]
-  payments          Payment[]
+  club         Club                 @relation(fields: [clubId], references: [id])
+  court        Court                @relation(fields: [courtId], references: [id])
+  createdBy    User                 @relation("BookingCreator", fields: [createdById], references: [id])
+  cancelledBy  User?                @relation("BookingCanceller", fields: [cancelledById], references: [id])
+  participants BookingParticipant[]
+  payments     Payment[]
 
-  @@index([club_id, court_id, start_time], name: "idx_bookings_club_court_start")
-  @@index([created_by_id], name: "idx_bookings_created_by")
-  @@index([status, start_time], name: "idx_bookings_status_date")
+  @@index([clubId, courtId, startTime], name: "idx_bookings_club_court_start")
+  @@index([createdById], name: "idx_bookings_created_by")
+  @@index([status, startTime], name: "idx_bookings_status_date")
   @@map("bookings")
 }
 
 model BookingParticipant {
-  id           String   @id @default(uuid())
-  booking_id   String
-  user_id      String?
-  guest_name   String?
-  is_host      Boolean  @default(false)
-  created_at   DateTime @default(now())
+  id        String   @id @default(uuid())
+  bookingId String   @map("booking_id")
+  userId    String?  @map("user_id")
+  guestName String?  @map("guest_name")
+  isHost    Boolean  @default(false) @map("is_host")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  booking      Booking  @relation(fields: [booking_id], references: [id], onDelete: Cascade)
-  user         User?    @relation(fields: [user_id], references: [id])
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
 
   @@map("booking_participants")
 }
 
 model Player {
-  id             String      @id @default(uuid())
-  user_id        String
-  club_id        String
-  level          PlayerLevel @default(beginner)
-  favorite_sport String?
-  status         String      @default("active")
-  created_at     DateTime    @default(now())
-  updated_at     DateTime    @updatedAt
+  id            String      @id @default(uuid())
+  userId        String      @map("user_id")
+  clubId        String      @map("club_id")
+  level         PlayerLevel @default(beginner)
+  favoriteSport String?     @map("favorite_sport")
+  status        String      @default("active")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
 
-  club               Club                    @relation(fields: [club_id], references: [id])
-  ranking_entries    RankingEntry[]
-  class_enrollments  ClassStudent[]
-  attendances        ClassAttendance[]
-  tournament_registrations TournamentRegistration[]
-  match_participations     MatchParticipant[]
+  club                    Club                     @relation(fields: [clubId], references: [id])
+  rankingEntries          RankingEntry[]
+  classEnrollments        ClassStudent[]
+  attendances             ClassAttendance[]
+  tournamentRegistrations TournamentRegistration[]
+  matchParticipations     MatchParticipant[]
 
   @@map("players")
 }
 
 model Teacher {
-  id              String   @id @default(uuid())
-  user_id         String
-  club_id         String
-  sports          String[]
-  commission_rate Decimal  @db.Decimal(5, 2)
-  status          String   @default("active")
-  bio             String?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  clubId         String   @map("club_id")
+  sports         String[]
+  commissionRate Decimal  @map("commission_rate") @db.Decimal(5, 2)
+  status         String   @default("active")
+  bio            String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  club            Club     @relation(fields: [club_id], references: [id])
-  classes         Class[]
+  club    Club    @relation(fields: [clubId], references: [id])
+  classes Class[]
 
   @@map("teachers")
 }
 
 model Class {
-  id                String   @id @default(uuid())
-  club_id           String
-  teacher_id        String
-  court_id          String?
-  name              String
-  sport_type        String
-  level             PlayerLevel
-  max_students      Int
-  price_per_month   Decimal  @db.Decimal(10, 2)
-  schedule          Json
-  status            String   @default("active")
-  start_date        DateTime @db.Date
-  end_date          DateTime? @db.Date
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+  id            String      @id @default(uuid())
+  clubId        String      @map("club_id")
+  teacherId     String      @map("teacher_id")
+  courtId       String?     @map("court_id")
+  name          String
+  sportType     String      @map("sport_type")
+  level         PlayerLevel
+  maxStudents   Int         @map("max_students")
+  pricePerMonth Decimal     @map("price_per_month") @db.Decimal(10, 2)
+  schedule      Json
+  status        String      @default("active")
+  startDate     DateTime    @map("start_date") @db.Date
+  endDate       DateTime?   @map("end_date") @db.Date
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
 
-  club              Club     @relation(fields: [club_id], references: [id])
-  teacher           Teacher  @relation(fields: [teacher_id], references: [id])
-  students          ClassStudent[]
-  attendances       ClassAttendance[]
-  payments          Payment[]
+  club        Club              @relation(fields: [clubId], references: [id])
+  teacher     Teacher           @relation(fields: [teacherId], references: [id])
+  students    ClassStudent[]
+  attendances ClassAttendance[]
+  payments    Payment[]
 
   @@map("classes")
 }
 
 model ClassStudent {
-  id          String   @id @default(uuid())
-  class_id    String
-  player_id   String
-  status      String   @default("active")
-  enrolled_at DateTime @db.Date
-  created_at  DateTime @default(now())
+  id         String   @id @default(uuid())
+  classId    String   @map("class_id")
+  playerId   String   @map("player_id")
+  status     String   @default("active")
+  enrolledAt DateTime @map("enrolled_at") @db.Date
+  createdAt  DateTime @default(now()) @map("created_at")
 
-  class       Class    @relation(fields: [class_id], references: [id], onDelete: Cascade)
-  player      Player   @relation(fields: [player_id], references: [id])
+  class  Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id])
 
-  @@unique([class_id, player_id])
+  @@unique([classId, playerId])
   @@map("class_students")
 }
 
 model ClassAttendance {
-  id          String                @id @default(uuid())
-  class_id    String
-  player_id   String
-  class_date  DateTime              @db.Date
-  status      ClassAttendanceStatus
-  notes       String?
-  created_at  DateTime              @default(now())
+  id        String                @id @default(uuid())
+  classId   String                @map("class_id")
+  playerId  String                @map("player_id")
+  classDate DateTime              @map("class_date") @db.Date
+  status    ClassAttendanceStatus
+  notes     String?
+  createdAt DateTime              @default(now()) @map("created_at")
 
-  class       Class   @relation(fields: [class_id], references: [id])
-  player      Player  @relation(fields: [player_id], references: [id])
+  class  Class  @relation(fields: [classId], references: [id])
+  player Player @relation(fields: [playerId], references: [id])
 
-  @@unique([class_id, player_id, class_date])
+  @@unique([classId, playerId, classDate])
   @@map("class_attendance")
 }
 
 model Tournament {
-  id                  String           @id @default(uuid())
-  club_id             String
-  name                String
-  slug                String           @unique
-  description         String?
-  sport_type          String
-  cover_url           String?
-  start_date          DateTime         @db.Date
-  end_date            DateTime         @db.Date
-  registration_start  DateTime         @db.Date
-  registration_end    DateTime         @db.Date
-  status              TournamentStatus @default(draft)
-  visibility          Visibility       @default(public)
-  requires_payment    Boolean          @default(false)
-  regulations         String?
-  created_at          DateTime         @default(now())
-  updated_at          DateTime         @updatedAt
+  id                String           @id @default(uuid())
+  clubId            String           @map("club_id")
+  name              String
+  slug              String           @unique
+  description       String?
+  sportType         String           @map("sport_type")
+  coverUrl          String?          @map("cover_url")
+  startDate         DateTime         @map("start_date") @db.Date
+  endDate           DateTime         @map("end_date") @db.Date
+  registrationStart DateTime         @map("registration_start") @db.Date
+  registrationEnd   DateTime         @map("registration_end") @db.Date
+  status            TournamentStatus @default(draft)
+  visibility        Visibility       @default(public)
+  requiresPayment   Boolean          @default(false) @map("requires_payment")
+  regulations       String?
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
 
-  club                Club             @relation(fields: [club_id], references: [id])
-  categories          TournamentCategory[]
-  registrations       TournamentRegistration[]
-  matches             Match[]
+  club          Club                     @relation(fields: [clubId], references: [id])
+  categories    TournamentCategory[]
+  registrations TournamentRegistration[]
+  matches       Match[]
 
   @@map("tournaments")
 }
 
 model TournamentCategory {
-  id                   String           @id @default(uuid())
-  tournament_id        String
-  name                 String
-  sport_type           String
-  gender               Gender
-  format               TournamentFormat
-  max_registrations    Int
-  registration_price   Decimal          @db.Decimal(10, 2)
-  created_at           DateTime         @default(now())
+  id                String           @id @default(uuid())
+  tournamentId      String           @map("tournament_id")
+  name              String
+  sportType         String           @map("sport_type")
+  gender            Gender
+  format            TournamentFormat
+  maxRegistrations  Int              @map("max_registrations")
+  registrationPrice Decimal          @map("registration_price") @db.Decimal(10, 2)
+  createdAt         DateTime         @default(now()) @map("created_at")
 
-  tournament           Tournament       @relation(fields: [tournament_id], references: [id], onDelete: Cascade)
-  registrations        TournamentRegistration[]
-  matches              Match[]
+  tournament    Tournament               @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  registrations TournamentRegistration[]
+  matches       Match[]
 
   @@map("tournament_categories")
 }
 
 model TournamentRegistration {
-  id            String   @id @default(uuid())
-  tournament_id String
-  category_id   String
-  player_id     String
-  partner_id    String?
-  status        String   @default("pending")
-  payment_id    String?
-  registered_at DateTime @default(now())
-  created_at    DateTime @default(now())
+  id           String   @id @default(uuid())
+  tournamentId String   @map("tournament_id")
+  categoryId   String   @map("category_id")
+  playerId     String   @map("player_id")
+  partnerId    String?  @map("partner_id")
+  status       String   @default("pending")
+  paymentId    String?  @map("payment_id")
+  registeredAt DateTime @default(now()) @map("registered_at")
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  tournament    Tournament         @relation(fields: [tournament_id], references: [id])
-  category      TournamentCategory @relation(fields: [category_id], references: [id])
-  player        Player             @relation(fields: [player_id], references: [id])
-  payment       Payment?           @relation(fields: [payment_id], references: [id])
+  tournament Tournament         @relation(fields: [tournamentId], references: [id])
+  category   TournamentCategory @relation(fields: [categoryId], references: [id])
+  player     Player             @relation(fields: [playerId], references: [id])
+  payment    Payment?           @relation(fields: [paymentId], references: [id])
 
   @@map("tournament_registrations")
 }
 
 model Match {
-  id            String      @id @default(uuid())
-  tournament_id String?
-  category_id   String?
-  club_id       String
-  court_id      String?
-  round         String?
-  match_number  Int?
-  start_time    DateTime?
-  status        MatchStatus @default(scheduled)
-  score         Json?
-  winner_id     String?
-  is_walkover   Boolean     @default(false)
-  notes         String?
-  created_at    DateTime    @default(now())
-  updated_at    DateTime    @updatedAt
+  id           String      @id @default(uuid())
+  tournamentId String?     @map("tournament_id")
+  categoryId   String?     @map("category_id")
+  clubId       String      @map("club_id")
+  courtId      String?     @map("court_id")
+  round        String?
+  matchNumber  Int?        @map("match_number")
+  startTime    DateTime?   @map("start_time")
+  status       MatchStatus @default(scheduled)
+  score        Json?
+  winnerId     String?     @map("winner_id")
+  isWalkover   Boolean     @default(false) @map("is_walkover")
+  notes        String?
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
 
-  tournament    Tournament?         @relation(fields: [tournament_id], references: [id])
-  category      TournamentCategory? @relation(fields: [category_id], references: [id])
-  court         Court?              @relation(fields: [court_id], references: [id])
-  participants  MatchParticipant[]
+  tournament   Tournament?         @relation(fields: [tournamentId], references: [id])
+  category     TournamentCategory? @relation(fields: [categoryId], references: [id])
+  court        Court?              @relation(fields: [courtId], references: [id])
+  participants MatchParticipant[]
 
-  @@index([tournament_id, status], name: "idx_matches_tournament_status")
+  @@index([tournamentId, status], name: "idx_matches_tournament_status")
   @@map("matches")
 }
 
 model MatchParticipant {
-  id         String  @id @default(uuid())
-  match_id   String
-  player_id  String
-  side       String
-  partner_id String?
-  created_at DateTime @default(now())
+  id        String   @id @default(uuid())
+  matchId   String   @map("match_id")
+  playerId  String   @map("player_id")
+  side      String
+  partnerId String?  @map("partner_id")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  match      Match   @relation(fields: [match_id], references: [id], onDelete: Cascade)
-  player     Player  @relation(fields: [player_id], references: [id])
+  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id])
 
   @@map("match_participants")
 }
 
 model Ranking {
-  id                  String      @id @default(uuid())
-  club_id             String
-  name                String
-  sport_type          String
-  category            String?
-  type                RankingType @default(manual)
-  is_public           Boolean     @default(true)
-  season_start        DateTime?   @db.Date
-  season_end          DateTime?   @db.Date
-  last_calculated_at  DateTime?
-  created_at          DateTime    @default(now())
-  updated_at          DateTime    @updatedAt
+  id               String      @id @default(uuid())
+  clubId           String      @map("club_id")
+  name             String
+  sportType        String      @map("sport_type")
+  category         String?
+  type             RankingType @default(manual)
+  isPublic         Boolean     @default(true) @map("is_public")
+  seasonStart      DateTime?   @map("season_start") @db.Date
+  seasonEnd        DateTime?   @map("season_end") @db.Date
+  lastCalculatedAt DateTime?   @map("last_calculated_at")
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
 
-  club                Club        @relation(fields: [club_id], references: [id])
-  entries             RankingEntry[]
+  club    Club           @relation(fields: [clubId], references: [id])
+  entries RankingEntry[]
 
-  @@index([club_id], name: "idx_rankings_club")
+  @@index([clubId], name: "idx_rankings_club")
   @@map("rankings")
 }
 
 model RankingEntry {
-  id                 String   @id @default(uuid())
-  ranking_id         String
-  player_id          String
-  position           Int
-  previous_position  Int?
-  points             Decimal  @db.Decimal(10, 2)
-  tournaments_played Int      @default(0)
-  wins               Int      @default(0)
-  losses             Int      @default(0)
-  updated_at         DateTime @updatedAt
+  id                String   @id @default(uuid())
+  rankingId         String   @map("ranking_id")
+  playerId          String   @map("player_id")
+  position          Int
+  previousPosition  Int?     @map("previous_position")
+  points            Decimal  @db.Decimal(10, 2)
+  tournamentsPlayed Int      @default(0) @map("tournaments_played")
+  wins              Int      @default(0)
+  losses            Int      @default(0)
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
-  ranking            Ranking  @relation(fields: [ranking_id], references: [id], onDelete: Cascade)
-  player             Player   @relation(fields: [player_id], references: [id])
+  ranking Ranking @relation(fields: [rankingId], references: [id], onDelete: Cascade)
+  player  Player  @relation(fields: [playerId], references: [id])
 
-  @@unique([ranking_id, player_id])
-  @@index([ranking_id, position], name: "idx_ranking_entries_position")
+  @@unique([rankingId, playerId])
+  @@index([rankingId, position], name: "idx_ranking_entries_position")
   @@map("ranking_entries")
 }
 
 model Payment {
-  id                          String        @id @default(uuid())
-  club_id                     String
-  user_id                     String
-  booking_id                  String?
-  subscription_id             String?
-  tournament_registration_id  String?
-  class_id                    String?
-  description                 String
-  amount                      Decimal       @db.Decimal(10, 2)
-  status                      PaymentStatus @default(pending)
-  method                      String?
-  due_date                    DateTime      @db.Date
-  paid_at                     DateTime?
-  notes                       String?
-  created_by_id               String
-  created_at                  DateTime      @default(now())
-  updated_at                  DateTime      @updatedAt
+  id                       String        @id @default(uuid())
+  clubId                   String        @map("club_id")
+  userId                   String        @map("user_id")
+  bookingId                String?       @map("booking_id")
+  subscriptionId           String?       @map("subscription_id")
+  tournamentRegistrationId String?       @map("tournament_registration_id")
+  classId                  String?       @map("class_id")
+  description              String
+  amount                   Decimal       @db.Decimal(10, 2)
+  status                   PaymentStatus @default(pending)
+  method                   String?
+  dueDate                  DateTime      @map("due_date") @db.Date
+  paidAt                   DateTime?     @map("paid_at")
+  notes                    String?
+  createdById              String        @map("created_by_id")
+  createdAt                DateTime      @default(now()) @map("created_at")
+  updatedAt                DateTime      @updatedAt @map("updated_at")
 
-  club                        Club          @relation(fields: [club_id], references: [id])
-  user                        User          @relation("UserPayments", fields: [user_id], references: [id])
-  booking                     Booking?      @relation(fields: [booking_id], references: [id])
-  class                       Class?        @relation(fields: [class_id], references: [id])
-  created_by                  User          @relation("PaymentCreator", fields: [created_by_id], references: [id])
-  tournament_registrations    TournamentRegistration[]
+  club                    Club                     @relation(fields: [clubId], references: [id])
+  user                    User                     @relation("UserPayments", fields: [userId], references: [id])
+  booking                 Booking?                 @relation(fields: [bookingId], references: [id])
+  class                   Class?                   @relation(fields: [classId], references: [id])
+  createdBy               User                     @relation("PaymentCreator", fields: [createdById], references: [id])
+  tournamentRegistrations TournamentRegistration[]
 
-  @@index([club_id, status, due_date], name: "idx_payments_club_status_due")
-  @@index([user_id], name: "idx_payments_user_id")
+  @@index([clubId, status, dueDate], name: "idx_payments_club_status_due")
+  @@index([userId], name: "idx_payments_user_id")
   @@map("payments")
 }
 
 model Plan {
-  id                         String   @id @default(uuid())
-  name                       String
-  price_monthly              Decimal  @db.Decimal(10, 2)
-  price_yearly               Decimal  @db.Decimal(10, 2)
-  max_courts                 Int
-  max_team_members           Int
-  max_tournaments_per_month  Int
-  features                   Json     @default("{}")
-  is_active                  Boolean  @default(true)
-  created_at                 DateTime @default(now())
+  id                     String   @id @default(uuid())
+  name                   String
+  priceMonthly           Decimal  @map("price_monthly") @db.Decimal(10, 2)
+  priceYearly            Decimal  @map("price_yearly") @db.Decimal(10, 2)
+  maxCourts              Int      @map("max_courts")
+  maxTeamMembers         Int      @map("max_team_members")
+  maxTournamentsPerMonth Int      @map("max_tournaments_per_month")
+  features               Json     @default("{}")
+  isActive               Boolean  @default(true) @map("is_active")
+  createdAt              DateTime @default(now()) @map("created_at")
 
-  subscriptions              Subscription[]
+  subscriptions Subscription[]
 
   @@map("plans")
 }
 
 model Subscription {
-  id                    String             @id @default(uuid())
-  club_id               String             @unique
-  plan_id               String
-  status                SubscriptionStatus @default(trialing)
-  current_period_start  DateTime           @db.Date
-  current_period_end    DateTime           @db.Date
-  trial_end             DateTime?          @db.Date
-  cancelled_at          DateTime?
-  created_at            DateTime           @default(now())
-  updated_at            DateTime           @updatedAt
+  id                 String             @id @default(uuid())
+  clubId             String             @unique @map("club_id")
+  planId             String             @map("plan_id")
+  status             SubscriptionStatus @default(trialing)
+  currentPeriodStart DateTime           @map("current_period_start") @db.Date
+  currentPeriodEnd   DateTime           @map("current_period_end") @db.Date
+  trialEnd           DateTime?          @map("trial_end") @db.Date
+  cancelledAt        DateTime?          @map("cancelled_at")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
 
-  club                  Club               @relation(fields: [club_id], references: [id])
-  plan                  Plan               @relation(fields: [plan_id], references: [id])
+  club Club @relation(fields: [clubId], references: [id])
+  plan Plan @relation(fields: [planId], references: [id])
 
   @@map("subscriptions")
 }
 
 model Notification {
-  id         String              @id @default(uuid())
-  user_id    String
-  club_id    String?
-  type       String
-  title      String
-  body       String
-  data       Json?
-  is_read    Boolean             @default(false)
-  read_at    DateTime?
-  channel    NotificationChannel
-  sent_at    DateTime?
-  created_at DateTime            @default(now())
+  id        String              @id @default(uuid())
+  userId    String              @map("user_id")
+  clubId    String?             @map("club_id")
+  type      String
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean             @default(false) @map("is_read")
+  readAt    DateTime?           @map("read_at")
+  channel   NotificationChannel
+  sentAt    DateTime?           @map("sent_at")
+  createdAt DateTime            @default(now()) @map("created_at")
 
-  user       User                @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  club       Club?               @relation(fields: [club_id], references: [id])
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club Club? @relation(fields: [clubId], references: [id])
 
-  @@index([user_id, is_read], name: "idx_notifications_user_unread")
+  @@index([userId, isRead], name: "idx_notifications_user_unread")
   @@map("notifications")
 }
 
 model Product {
   id          String   @id @default(uuid())
-  club_id     String
+  clubId      String   @map("club_id")
   name        String
   description String?
   price       Decimal  @db.Decimal(10, 2)
   stock       Int?
   category    String?
-  is_active   Boolean  @default(true)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  club        Club        @relation(fields: [club_id], references: [id])
-  order_items OrderItem[]
+  club       Club        @relation(fields: [clubId], references: [id])
+  orderItems OrderItem[]
 
   @@map("products")
 }
 
 model Order {
-  id         String   @id @default(uuid())
-  club_id    String
-  user_id    String
-  total      Decimal  @db.Decimal(10, 2)
-  status     String   @default("pending")
-  payment_id String?
-  created_at DateTime @default(now())
+  id        String   @id @default(uuid())
+  clubId    String   @map("club_id")
+  userId    String   @map("user_id")
+  total     Decimal  @db.Decimal(10, 2)
+  status    String   @default("pending")
+  paymentId String?  @map("payment_id")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  items      OrderItem[]
+  items OrderItem[]
 
   @@map("orders")
 }
 
 model OrderItem {
-  id         String   @id @default(uuid())
-  order_id   String
-  product_id String
-  quantity   Int
-  unit_price Decimal  @db.Decimal(10, 2)
-  created_at DateTime @default(now())
+  id        String   @id @default(uuid())
+  orderId   String   @map("order_id")
+  productId String   @map("product_id")
+  quantity  Int
+  unitPrice Decimal  @map("unit_price") @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at")
 
-  order      Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  product    Product @relation(fields: [product_id], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
 
   @@map("order_items")
 }
 
 model AuditLog {
-  id          String   @id @default(uuid())
-  club_id     String?
-  user_id     String?
-  action      String
-  entity_type String
-  entity_id   String
-  before      Json?
-  after       Json?
-  ip_address  String?
-  user_agent  String?
-  created_at  DateTime @default(now())
+  id         String   @id @default(uuid())
+  clubId     String?  @map("club_id")
+  userId     String?  @map("user_id")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  before     Json?
+  after      Json?
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
 
-  club        Club?    @relation(fields: [club_id], references: [id])
-  user        User?    @relation(fields: [user_id], references: [id])
+  club Club? @relation(fields: [clubId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
 
-  @@index([entity_type, entity_id], name: "idx_audit_logs_entity")
-  @@index([club_id, created_at], name: "idx_audit_logs_club_created")
+  @@index([entityType, entityId], name: "idx_audit_logs_entity")
+  @@index([clubId, createdAt], name: "idx_audit_logs_club_created")
   @@map("audit_logs")
 }
 
 model File {
-  id               String   @id @default(uuid())
-  uploaded_by_id   String
-  club_id          String?
-  original_name    String
-  storage_key      String
-  url              String
-  mime_type        String
-  size_bytes       BigInt
-  created_at       DateTime @default(now())
+  id           String   @id @default(uuid())
+  uploadedById String   @map("uploaded_by_id")
+  clubId       String?  @map("club_id")
+  originalName String   @map("original_name")
+  storageKey   String   @map("storage_key")
+  url          String
+  mimeType     String   @map("mime_type")
+  sizeBytes    BigInt   @map("size_bytes")
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  uploaded_by      User     @relation(fields: [uploaded_by_id], references: [id])
+  uploadedBy User @relation(fields: [uploadedById], references: [id])
 
   @@map("files")
 }
