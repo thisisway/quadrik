@@ -10,7 +10,8 @@ export default function RootPage() {
 
   useEffect(() => {
     if (isLoading) return
-    router.replace(user ? '/app' : '/login')
+    if (!user) { router.replace('/login'); return }
+    router.replace(user.role === 'PLAYER' ? '/player' : '/app')
   }, [user, isLoading, router])
 
   return (

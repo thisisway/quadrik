@@ -13,11 +13,8 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     if (isLoading) return
-    if (!user) {
-      router.replace('/login')
-      return
-    }
-    // Redirect to setup if user has no club, unless already on setup
+    if (!user) { router.replace('/login'); return }
+    if (user.role === 'PLAYER') { router.replace('/player'); return }
     if (!user.clubId && pathname !== '/app/setup') {
       router.replace('/app/setup')
     }

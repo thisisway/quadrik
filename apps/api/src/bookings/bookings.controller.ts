@@ -46,6 +46,15 @@ export class BookingsController {
     })
   }
 
+  @Get('mine')
+  @ApiOperation({ summary: 'Get bookings where current user is a participant' })
+  findMine(
+    @Param('clubId') clubId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.bookings.findByParticipant(clubId, user.id)
+  }
+
   @Get(':bookingId')
   @ApiOperation({ summary: 'Get booking details' })
   findOne(@Param('clubId') clubId: string, @Param('bookingId') bookingId: string) {

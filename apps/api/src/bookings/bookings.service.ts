@@ -88,6 +88,21 @@ export class BookingsService {
     })
   }
 
+  async findByParticipant(clubId: string, userId: string) {
+    return this.prisma.booking.findMany({
+      where: {
+        clubId,
+        participants: { some: { userId } },
+      },
+      include: {
+        court: { select: { id: true, name: true, sportType: true } },
+        createdBy: { select: { id: true, name: true } },
+        participants: { include: { user: { select: { id: true, name: true } } } },
+      },
+      orderBy: { startTime: 'desc' },
+    })
+  }
+
   async findOne(clubId: string, bookingId: string) {
     const booking = await this.prisma.booking.findFirst({
       where: { id: bookingId, clubId },
