@@ -50,4 +50,5 @@ COPY apps/api/package.json ./package.json
 
 EXPOSE 3001
 # Run migrations then start the app
-CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && node dist/main.js"]
+# Resolve any failed migration left from a previous crashed deploy, then apply migrations
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate resolve --rolled-back 20260617210239_init 2>/dev/null; ./node_modules/.bin/prisma migrate deploy && node dist/main.js"]
