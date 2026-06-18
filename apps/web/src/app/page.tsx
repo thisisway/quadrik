@@ -1,13 +1,21 @@
-export default function HomePage() {
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/auth'
+
+export default function RootPage() {
+  const { user, isLoading } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (isLoading) return
+    router.replace(user ? '/app' : '/login')
+  }, [user, isLoading, router])
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-sand">
-      <div className="text-center">
-        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-[24px] bg-grad-sun shadow-lg">
-          <div className="relative h-12 w-12 rounded-full border-[8px] border-white" />
-        </div>
-        <h1 className="text-4xl font-black tracking-tight text-q-navy">Quadrik</h1>
-        <p className="mt-3 text-lg text-gray">Bora jogar?</p>
-      </div>
-    </main>
+    <div className="flex min-h-screen items-center justify-center bg-sand">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-q-navy border-t-transparent" />
+    </div>
   )
 }
