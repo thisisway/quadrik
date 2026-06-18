@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { api } from '@/lib/api'
+import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -111,7 +112,9 @@ export default function CourtsPage() {
       void qc.invalidateQueries({ queryKey: ['courts', clubId] })
       setShowForm(false)
       reset()
+      toast('Quadra criada com sucesso!', { variant: 'success' })
     },
+    onError: (err) => toast((err as { message?: string }).message ?? 'Erro ao criar quadra', { variant: 'error' }),
   })
 
   const toggleMutation = useMutation({

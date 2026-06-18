@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -121,7 +122,9 @@ export function NewBookingModal({
       void qc.invalidateQueries({ queryKey: ['bookings', clubId] })
       reset()
       onClose()
+      toast('Reserva criada com sucesso!', { variant: 'success' })
     },
+    onError: (err) => toast((err as { message?: string }).message ?? 'Erro ao criar reserva', { variant: 'error' }),
   })
 
   function handleClose() {
