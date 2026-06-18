@@ -33,7 +33,11 @@ export class BookingsController {
     @Query('date') date?: string,
     @Query('status') status?: string,
   ) {
-    return this.bookings.findAll(clubId, { courtId, date, status })
+    return this.bookings.findAll(clubId, {
+      ...(courtId !== undefined && { courtId }),
+      ...(date !== undefined && { date }),
+      ...(status !== undefined && { status }),
+    })
   }
 
   @Get(':bookingId')
