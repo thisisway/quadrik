@@ -121,6 +121,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
       <div className="px-3 py-3">
         <Link
           href="/app/settings"
+          onClick={() => onClose?.()}
           className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/50 hover:bg-white/8 hover:text-white transition-colors"
         >
           <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>

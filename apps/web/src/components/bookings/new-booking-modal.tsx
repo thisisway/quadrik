@@ -23,7 +23,9 @@ interface Props {
   onClose: () => void
   clubId: string
   courts: Court[]
-  defaultDate?: string
+  defaultDate?: string | undefined
+  defaultCourtId?: string | undefined
+  defaultStartTime?: string | undefined
 }
 
 const schema = z
@@ -54,7 +56,15 @@ function calcPrice(startTime: string, endTime: string, pricePerHour: number): nu
   return Math.round(hours * pricePerHour * 100) / 100
 }
 
-export function NewBookingModal({ open, onClose, clubId, courts, defaultDate }: Props) {
+export function NewBookingModal({
+  open,
+  onClose,
+  clubId,
+  courts,
+  defaultDate,
+  defaultCourtId,
+  defaultStartTime,
+}: Props) {
   const qc = useQueryClient()
 
   const {
@@ -66,8 +76,21 @@ export function NewBookingModal({ open, onClose, clubId, courts, defaultDate }: 
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { date: defaultDate ?? new Date().toISOString().substring(0, 10) },
+    defaultValues: {
+      date: defaultDate ?? new Date().toISOString().substring(0, 10),
+      courtId: defaultCourtId ?? '',
+      startTime: defaultStartTime ?? '',
+    },
   })
+
+  // Sync defaults when modal opens with pre-filled values
+  useEffect(() => {
+    if (open) {
+      if (defaultCourtId) setValue('courtId', defaultCourtId)
+      if (defaultStartTime) setValue('startTime', defaultStartTime)
+      if (defaultDate) setValue('date', defaultDate)
+    }
+  }, [open, defaultCourtId, defaultStartTime, defaultDate, setValue])
 
   const watchCourt = watch('courtId')
   const watchStart = watch('startTime')
