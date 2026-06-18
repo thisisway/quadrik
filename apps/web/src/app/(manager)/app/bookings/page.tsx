@@ -15,8 +15,8 @@ import { cn } from '@/lib/utils'
 interface Court {
   id: string
   name: string
-  sport: string
-  pricePerHour: number
+  sportType: string
+  pricePerHour: number | string
 }
 
 interface Booking {
@@ -24,9 +24,10 @@ interface Booking {
   startTime: string
   endTime: string
   status: string
-  totalPrice: number
+  paymentStatus: string
+  price: number | string
   notes: string | null
-  court: { id: string; name: string; sport: string }
+  court: { id: string; name: string; sportType: string }
   participants: Array<{ user: { id: string; name: string } }>
 }
 
@@ -289,7 +290,7 @@ export default function BookingsPage() {
                         <span className="ml-1 text-xs text-gray/60">+{b.participants.length - 1}</span>
                       )}
                     </td>
-                    <td className="px-5 py-3.5 font-medium text-q-navy">{formatCurrency(b.totalPrice)}</td>
+                    <td className="px-5 py-3.5 font-medium text-q-navy">{formatCurrency(Number(b.price))}</td>
                     <td className="px-5 py-3.5">
                       <Badge variant={statusVariant[b.status] ?? 'default'}>
                         {statusLabel[b.status] ?? b.status}

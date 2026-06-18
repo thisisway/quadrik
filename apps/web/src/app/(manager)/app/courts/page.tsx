@@ -12,15 +12,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { CourtCard, type Court } from '@/components/courts/court-card'
-import { cn } from '@/lib/utils'
 
 const schema = z.object({
   name: z.string().min(2, 'Nome obrigatório'),
-  sport: z.string().min(1, 'Esporte obrigatório'),
-  surface: z.string().min(1, 'Superfície obrigatória'),
-  capacity: z.coerce.number().int().min(1).max(20),
+  sportType: z.string().min(1, 'Esporte obrigatório'),
+  surfaceType: z.string().optional(),
+  playerCapacity: z.coerce.number().int().min(1).max(20),
   pricePerHour: z.coerce.number().min(0),
-  description: z.string().optional(),
 })
 type FormData = z.infer<typeof schema>
 
@@ -67,7 +65,7 @@ export default function CourtsPage() {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { capacity: 4, pricePerHour: 60 } })
+  } = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { playerCapacity: 4, pricePerHour: 60 } })
 
   if (!clubId) {
     return (
@@ -103,48 +101,42 @@ export default function CourtsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="sport">Esporte</Label>
+              <Label htmlFor="sportType">Esporte</Label>
               <select
-                id="sport"
+                id="sportType"
                 className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-q-navy focus:outline-none focus:ring-2 focus:ring-q-blue"
-                {...register('sport')}
+                {...register('sportType')}
               >
                 <option value="">Selecione</option>
                 {Object.entries(sportLabels).map(([v, l]) => (
                   <option key={v} value={v}>{l}</option>
                 ))}
               </select>
-              {errors.sport && <p className="text-xs text-q-red">{errors.sport.message}</p>}
+              {errors.sportType && <p className="text-xs text-q-red">{errors.sportType.message}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="surface">Superfície</Label>
+              <Label htmlFor="surfaceType">Superfície</Label>
               <select
-                id="surface"
+                id="surfaceType"
                 className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-q-navy focus:outline-none focus:ring-2 focus:ring-q-blue"
-                {...register('surface')}
+                {...register('surfaceType')}
               >
                 <option value="">Selecione</option>
                 {Object.entries(surfaceLabels).map(([v, l]) => (
                   <option key={v} value={v}>{l}</option>
                 ))}
               </select>
-              {errors.surface && <p className="text-xs text-q-red">{errors.surface.message}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="capacity">Capacidade (pessoas)</Label>
-              <Input id="capacity" type="number" min={1} max={20} error={errors.capacity?.message} {...register('capacity')} />
+              <Label htmlFor="playerCapacity">Capacidade (pessoas)</Label>
+              <Input id="playerCapacity" type="number" min={1} max={20} error={errors.playerCapacity?.message} {...register('playerCapacity')} />
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="pricePerHour">Valor por hora (R$)</Label>
               <Input id="pricePerHour" type="number" min={0} step={0.01} error={errors.pricePerHour?.message} {...register('pricePerHour')} />
-            </div>
-
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="description">Descrição (opcional)</Label>
-              <Input id="description" placeholder="Ex: Quadra coberta com iluminação" {...register('description')} />
             </div>
 
             {createMutation.error && (
@@ -154,7 +146,7 @@ export default function CourtsPage() {
             )}
 
             <div className="sm:col-span-2 flex justify-end">
-              <Button type="submit" variant="gradient" loading={isSubmitting}>
+              <Button type="submit" variant="gradient" loading={isSubmitting || createMutation.isPending}>
                 Salvar quadra
               </Button>
             </div>
@@ -177,11 +169,7 @@ export default function CourtsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {courts?.map((court) => (
-            <CourtCard
-              key={court.id}
-              court={court}
-              clubId={clubId}
-            />
+            <CourtCard key={court.id} court={court} clubId={clubId} />
           ))}
         </div>
       )}

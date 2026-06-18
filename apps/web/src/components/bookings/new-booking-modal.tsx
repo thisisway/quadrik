@@ -15,8 +15,8 @@ import { Label } from '@/components/ui/label'
 interface Court {
   id: string
   name: string
-  sport: string
-  pricePerHour: number
+  sportType: string
+  pricePerHour: number | string
 }
 
 interface Props {
@@ -102,7 +102,7 @@ export function NewBookingModal({
   // Auto-calculate price when times or court change
   useEffect(() => {
     if (selectedCourt && watchStart && watchEnd) {
-      setValue('price', calcPrice(watchStart, watchEnd, selectedCourt.pricePerHour))
+      setValue('price', calcPrice(watchStart, watchEnd, Number(selectedCourt.pricePerHour)))
     }
   }, [watchCourt, watchStart, watchEnd, selectedCourt, setValue])
 
@@ -193,7 +193,7 @@ export function NewBookingModal({
               <Label htmlFor="price">
                 Valor (R$){' '}
                 <span className="font-normal text-gray">
-                  {selectedCourt ? `· R$ ${selectedCourt.pricePerHour}/h` : ''}
+                  {selectedCourt ? `· R$ ${Number(selectedCourt.pricePerHour)}/h` : ''}
                 </span>
               </Label>
               <Input

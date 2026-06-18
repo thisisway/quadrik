@@ -10,8 +10,8 @@ const HOUR_H = 64 // px per hour
 interface Court {
   id: string
   name: string
-  sport: string
-  pricePerHour: number
+  sportType: string
+  pricePerHour: number | string
 }
 
 interface Booking {
@@ -19,9 +19,10 @@ interface Booking {
   startTime: string
   endTime: string
   status: string
-  totalPrice: number
+  paymentStatus: string
+  price: number | string
   notes: string | null
-  court: { id: string; name: string; sport: string }
+  court: { id: string; name: string; sportType: string }
   participants: Array<{ user: { id: string; name: string } }>
 }
 
@@ -68,7 +69,7 @@ export function BookingGrid({ courts, bookings, onSlotClick, onBookingClick }: P
               className="flex-1 border-r border-gray-100 last:border-r-0 px-2 py-3 text-center"
             >
               <p className="text-xs font-semibold text-q-navy truncate">{court.name}</p>
-              <p className="mt-0.5 text-[10px] text-gray">{SPORTS_PT[court.sport] ?? court.sport}</p>
+              <p className="mt-0.5 text-[10px] text-gray">{SPORTS_PT[court.sportType] ?? court.sportType}</p>
             </div>
           ))}
         </div>

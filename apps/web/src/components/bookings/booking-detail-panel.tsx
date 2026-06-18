@@ -13,9 +13,10 @@ interface Booking {
   startTime: string
   endTime: string
   status: string
-  totalPrice: number
+  paymentStatus: string
+  price: number | string
   notes: string | null
-  court: { id: string; name: string; sport: string }
+  court: { id: string; name: string; sportType: string }
   participants: Array<{ user: { id: string; name: string } }>
 }
 
@@ -38,6 +39,21 @@ const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger'
   cancelled: 'danger',
   completed: 'info',
   no_show: 'default',
+}
+
+const paymentLabel: Record<string, string> = {
+  pending: 'Aguardando pagamento',
+  paid: 'Pago',
+  overdue: 'Atrasado',
+  cancelled: 'Cancelado',
+  refunded: 'Reembolsado',
+}
+const paymentVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info'> = {
+  pending: 'warning',
+  paid: 'success',
+  overdue: 'danger',
+  cancelled: 'default',
+  refunded: 'info',
 }
 
 const SPORTS_PT: Record<string, string> = {
@@ -95,6 +111,15 @@ export function BookingDetailPanel({ booking, clubId, onClose }: Props) {
     },
   })
 
+  const markPaidMutation = useMutation({
+    mutationFn: () =>
+      api.patch(`/clubs/${clubId}/bookings/${booking!.id}/status`, { paymentStatus: 'paid' }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['bookings', clubId] })
+      toast('Pagamento registrado!', { variant: 'success' })
+    },
+  })
+
   return (
     <>
       {/* Backdrop */}
@@ -146,7 +171,7 @@ export function BookingDetailPanel({ booking, clubId, onClose }: Props) {
                 </div>
                 <div>
                   <p className="font-semibold text-q-navy">{booking.court.name}</p>
-                  <p className="text-xs text-gray">{SPORTS_PT[booking.court.sport] ?? booking.court.sport}</p>
+                  <p className="text-xs text-gray">{SPORTS_PT[booking.court.sportType] ?? booking.court.sportType}</p>
                 </div>
               </div>
 
@@ -161,7 +186,12 @@ export function BookingDetailPanel({ booking, clubId, onClose }: Props) {
                   {fmt(booking.endTime, { hour: '2-digit', minute: '2-digit' })}
                 </Row>
                 <Row label="Valor">
-                  <span className="font-semibold">{formatCurrency(booking.totalPrice)}</span>
+                  <span className="font-semibold">{formatCurrency(Number(booking.price))}</span>
+                </Row>
+                <Row label="Pagamento">
+                  <Badge variant={paymentVariant[booking.paymentStatus] ?? 'default'}>
+                    {paymentLabel[booking.paymentStatus] ?? booking.paymentStatus}
+                  </Badge>
                 </Row>
                 <Row label="Jogadores">
                   <span className="text-right">
@@ -198,6 +228,17 @@ export function BookingDetailPanel({ booking, clubId, onClose }: Props) {
                   Marcar como concluída
                 </Button>
               )}
+              {booking.paymentStatus !== 'paid' &&
+                !['cancelled', 'no_show'].includes(booking.status) && (
+                  <Button
+                    variant="outline"
+                    className="w-full text-green-700 border-green-200 hover:bg-green-50"
+                    loading={markPaidMutation.isPending}
+                    onClick={() => markPaidMutation.mutate()}
+                  >
+                    Marcar como pago
+                  </Button>
+                )}
               {(booking.status === 'pending' || booking.status === 'confirmed') && (
                 <Button
                   variant="outline"
@@ -211,8 +252,8 @@ export function BookingDetailPanel({ booking, clubId, onClose }: Props) {
               {booking.status === 'cancelled' && (
                 <p className="text-center text-sm text-gray">Esta reserva foi cancelada.</p>
               )}
-              {booking.status === 'completed' && (
-                <p className="text-center text-sm text-gray">Reserva concluída.</p>
+              {booking.status === 'completed' && booking.paymentStatus === 'paid' && (
+                <p className="text-center text-sm text-gray">Reserva concluída e paga.</p>
               )}
             </div>
           </>

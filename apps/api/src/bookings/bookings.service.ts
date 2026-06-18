@@ -138,13 +138,16 @@ export class BookingsService {
     })
   }
 
-  async updateStatus(clubId: string, bookingId: string, userId: string, status: string) {
+  async updateStatus(clubId: string, bookingId: string, userId: string, status?: string, paymentStatus?: string) {
     await this.findOne(clubId, bookingId)
     await this.assertStaff(clubId, userId)
 
     return this.prisma.booking.update({
       where: { id: bookingId },
-      data: { status: status as any },
+      data: {
+        ...(status !== undefined && { status: status as any }),
+        ...(paymentStatus !== undefined && { paymentStatus: paymentStatus as any }),
+      },
     })
   }
 

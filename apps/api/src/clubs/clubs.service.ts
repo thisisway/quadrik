@@ -69,6 +69,35 @@ export class ClubsService {
     })
   }
 
+  async updateMember(clubId: string, memberId: string, actorId: string, role: string) {
+    await this.assertMembership(clubId, actorId, ['OWNER', 'MANAGER'])
+
+    const member = await this.prisma.clubMember.findFirst({
+      where: { id: memberId, clubId },
+    })
+    if (!member) throw new NotFoundException('Member not found')
+    if (member.role === 'OWNER') throw new ForbiddenException('Cannot change role of owner')
+
+    return this.prisma.clubMember.update({
+      where: { id: memberId },
+      data: { role: role as any },
+      include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+    })
+  }
+
+  async removeMember(clubId: string, memberId: string, actorId: string) {
+    await this.assertMembership(clubId, actorId, ['OWNER', 'MANAGER'])
+
+    const member = await this.prisma.clubMember.findFirst({
+      where: { id: memberId, clubId },
+    })
+    if (!member) throw new NotFoundException('Member not found')
+    if (member.role === 'OWNER') throw new ForbiddenException('Cannot remove owner')
+    if (member.userId === actorId) throw new ForbiddenException('Cannot remove yourself')
+
+    return this.prisma.clubMember.delete({ where: { id: memberId } })
+  }
+
   private async assertMembership(clubId: string, userId: string, roles: string[]) {
     const m = await this.prisma.clubMember.findUnique({
       where: { clubId_userId: { clubId, userId } },

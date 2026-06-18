@@ -72,13 +72,14 @@ export class BookingsController {
   }
 
   @Patch(':bookingId/status')
-  @ApiOperation({ summary: 'Update booking status (staff only)' })
+  @ApiOperation({ summary: 'Update booking status and/or payment status (staff only)' })
   updateStatus(
     @Param('clubId') clubId: string,
     @Param('bookingId') bookingId: string,
     @CurrentUser() user: { id: string },
-    @Body('status') status: string,
+    @Body('status') status?: string,
+    @Body('paymentStatus') paymentStatus?: string,
   ) {
-    return this.bookings.updateStatus(clubId, bookingId, user.id, status)
+    return this.bookings.updateStatus(clubId, bookingId, user.id, status, paymentStatus)
   }
 }

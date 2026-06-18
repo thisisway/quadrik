@@ -20,7 +20,7 @@ interface Booking {
   startTime: string
   endTime: string
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show'
-  price: number
+  price: number | string
   court: { id: string; name: string; sportType: string }
   participants: Array<{ user: { id: string; name: string } }>
 }
@@ -97,11 +97,11 @@ export default function FinancesPage() {
     const pending = bookings.filter((b) => b.status === 'pending')
     const cancelled = bookings.filter((b) => b.status === 'cancelled')
 
-    const confirmedRevenue = active.reduce((s, b) => s + b.price, 0)
-    const pendingRevenue = pending.reduce((s, b) => s + b.price, 0)
+    const confirmedRevenue = active.reduce((s, b) => s + Number(b.price), 0)
+    const pendingRevenue = pending.reduce((s, b) => s + Number(b.price), 0)
 
     const prevActive = prevBookings.filter((b) => ['confirmed', 'completed'].includes(b.status))
-    const prevRevenue = prevActive.reduce((s, b) => s + b.price, 0)
+    const prevRevenue = prevActive.reduce((s, b) => s + Number(b.price), 0)
     const growth =
       prevRevenue > 0 ? ((confirmedRevenue - prevRevenue) / prevRevenue) * 100 : null
 
@@ -124,7 +124,7 @@ export default function FinancesPage() {
       .filter((b) => ['confirmed', 'completed'].includes(b.status))
       .forEach((b) => {
         const day = new Date(b.startTime).getDate()
-        map[day] = (map[day] ?? 0) + b.price
+        map[day] = (map[day] ?? 0) + Number(b.price)
       })
     return Array.from({ length: daysInMonth }, (_, i) => ({
       day: i + 1,
@@ -139,7 +139,7 @@ export default function FinancesPage() {
       .forEach((b) => {
         const key = b.court.id
         if (!map[key]) map[key] = { name: b.court.name, receita: 0, reservas: 0 }
-        map[key]!.receita += b.price
+        map[key]!.receita += Number(b.price)
         map[key]!.reservas += 1
       })
     return Object.values(map).sort((a, b) => b.receita - a.receita)
@@ -322,7 +322,7 @@ export default function FinancesPage() {
               {(['confirmed', 'completed', 'pending', 'cancelled', 'no_show'] as const).map((status) => {
                 const group = bookings.filter((b) => b.status === status)
                 if (group.length === 0) return null
-                const total = group.reduce((s, b) => s + b.price, 0)
+                const total = group.reduce((s, b) => s + Number(b.price), 0)
                 return (
                   <div key={status} className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-2.5">
                     <div className="flex items-center gap-3">
@@ -386,7 +386,7 @@ export default function FinancesPage() {
                       </Badge>
                     </td>
                     <td className="px-6 py-3 text-right font-semibold text-q-navy">
-                      {brl(b.price)}
+                      {brl(Number(b.price))}
                     </td>
                   </tr>
                 ))}

@@ -26,8 +26,8 @@ interface Booking {
   startTime: string
   endTime: string
   status: string
-  totalPrice: number
-  court: { name: string; sport: string }
+  price: number | string
+  court: { name: string; sportType: string }
   participants: Array<{ user: { name: string } }>
 }
 
@@ -130,7 +130,7 @@ export default function DashboardPage() {
     const dayBookings = weekQueries[i]?.data ?? []
     const revenue = dayBookings
       .filter((b) => b.status === 'confirmed' || b.status === 'completed')
-      .reduce((s, b) => s + b.totalPrice, 0)
+      .reduce((s, b) => s + Number(b.price), 0)
     const label = new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', {
       weekday: 'short',
       day: 'numeric',
@@ -141,7 +141,7 @@ export default function DashboardPage() {
   const confirmed = todayBookings?.filter((b) => b.status === 'confirmed' || b.status === 'pending') ?? []
   const todayRevenue = todayBookings
     ?.filter((b) => b.status === 'confirmed')
-    .reduce((s, b) => s + b.totalPrice, 0) ?? 0
+    .reduce((s, b) => s + Number(b.price), 0) ?? 0
 
   const weekTotal = weekQueries.reduce((s, q) => s + (q.data?.length ?? 0), 0)
   const weekRevenue = weekQueries.reduce(
@@ -149,7 +149,7 @@ export default function DashboardPage() {
       s +
       (q.data
         ?.filter((b) => b.status === 'confirmed' || b.status === 'completed')
-        .reduce((a, b) => a + b.totalPrice, 0) ?? 0),
+        .reduce((a, b) => a + Number(b.price), 0) ?? 0),
     0,
   )
 
@@ -253,7 +253,7 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-5 py-3 text-gray">{b.court.name}</td>
                     <td className="px-5 py-3 text-gray">{b.participants[0]?.user.name ?? '—'}</td>
-                    <td className="px-5 py-3 font-medium text-q-navy">{formatCurrency(b.totalPrice)}</td>
+                    <td className="px-5 py-3 font-medium text-q-navy">{formatCurrency(Number(b.price))}</td>
                     <td className="px-5 py-3">
                       <Badge variant={statusVariant[b.status] ?? 'default'}>
                         {statusLabel[b.status] ?? b.status}

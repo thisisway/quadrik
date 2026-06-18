@@ -16,12 +16,11 @@ import { cn } from '@/lib/utils'
 export interface Court {
   id: string
   name: string
-  sport: string
-  surface: string
-  capacity: number
-  pricePerHour: number
-  isActive: boolean
-  description: string | null
+  sportType: string
+  surfaceType: string | null
+  playerCapacity: number
+  pricePerHour: number | string
+  status: string
 }
 
 const sportLabels: Record<string, string> = {
@@ -41,11 +40,10 @@ const surfaceLabels: Record<string, string> = {
 
 const schema = z.object({
   name: z.string().min(2),
-  sport: z.string().min(1),
-  surface: z.string().min(1),
-  capacity: z.coerce.number().int().min(1).max(20),
+  sportType: z.string().min(1),
+  surfaceType: z.string().optional(),
+  playerCapacity: z.coerce.number().int().min(1).max(20),
   pricePerHour: z.coerce.number().min(0),
-  description: z.string().optional(),
 })
 type FormData = z.infer<typeof schema>
 
@@ -57,16 +55,16 @@ interface Props {
 export function CourtCard({ court, clubId }: Props) {
   const [editing, setEditing] = useState(false)
   const qc = useQueryClient()
+  const isActive = court.status === 'active'
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: court.name,
-      sport: court.sport,
-      surface: court.surface,
-      capacity: court.capacity,
-      pricePerHour: court.pricePerHour,
-      description: court.description ?? '',
+      sportType: court.sportType,
+      surfaceType: court.surfaceType ?? '',
+      playerCapacity: court.playerCapacity,
+      pricePerHour: Number(court.pricePerHour),
     },
   })
 
@@ -81,11 +79,11 @@ export function CourtCard({ court, clubId }: Props) {
   })
 
   const toggleMutation = useMutation({
-    mutationFn: (isActive: boolean) => api.patch(`/clubs/${clubId}/courts/${court.id}`, { isActive }),
+    mutationFn: (status: string) => api.patch(`/clubs/${clubId}/courts/${court.id}`, { status }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['courts', clubId] })
-      toast(court.isActive ? 'Quadra desativada' : 'Quadra ativada!', {
-        variant: court.isActive ? 'default' : 'success',
+      toast(isActive ? 'Quadra desativada' : 'Quadra ativada!', {
+        variant: isActive ? 'default' : 'success',
       })
     },
   })
@@ -107,28 +105,25 @@ export function CourtCard({ court, clubId }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>Esporte</Label>
-              <select className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-q-navy focus:outline-none focus:ring-2 focus:ring-q-blue" {...register('sport')}>
+              <select className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-q-navy focus:outline-none focus:ring-2 focus:ring-q-blue" {...register('sportType')}>
                 {Object.entries(sportLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </div>
             <div className="space-y-1">
               <Label>Superfície</Label>
-              <select className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-q-navy focus:outline-none focus:ring-2 focus:ring-q-blue" {...register('surface')}>
+              <select className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-q-navy focus:outline-none focus:ring-2 focus:ring-q-blue" {...register('surfaceType')}>
+                <option value="">—</option>
                 {Object.entries(surfaceLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </div>
             <div className="space-y-1">
               <Label>Capacidade</Label>
-              <Input type="number" min={1} max={20} {...register('capacity')} />
+              <Input type="number" min={1} max={20} {...register('playerCapacity')} />
             </div>
             <div className="space-y-1">
               <Label>Valor/hora (R$)</Label>
               <Input type="number" min={0} step={0.01} {...register('pricePerHour')} />
             </div>
-          </div>
-          <div className="space-y-1">
-            <Label>Descrição</Label>
-            <Input placeholder="Opcional" {...register('description')} />
           </div>
           <div className="flex gap-2 pt-1">
             <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => setEditing(false)}>
@@ -144,17 +139,18 @@ export function CourtCard({ court, clubId }: Props) {
   }
 
   return (
-    <div className={cn('rounded-2xl bg-white p-5 shadow-sm transition-opacity', !court.isActive && 'opacity-60')}>
+    <div className={cn('rounded-2xl bg-white p-5 shadow-sm transition-opacity', !isActive && 'opacity-60')}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="truncate font-semibold text-q-navy">{court.name}</h3>
-            <Badge variant={court.isActive ? 'success' : 'default'}>
-              {court.isActive ? 'Ativa' : 'Inativa'}
+            <Badge variant={isActive ? 'success' : 'default'}>
+              {isActive ? 'Ativa' : 'Inativa'}
             </Badge>
           </div>
           <p className="mt-0.5 text-sm text-gray">
-            {sportLabels[court.sport] ?? court.sport} · {surfaceLabels[court.surface] ?? court.surface}
+            {sportLabels[court.sportType] ?? court.sportType}
+            {court.surfaceType ? ` · ${surfaceLabels[court.surfaceType] ?? court.surfaceType}` : ''}
           </p>
         </div>
 
@@ -169,15 +165,15 @@ export function CourtCard({ court, clubId }: Props) {
             </svg>
           </button>
           <button
-            onClick={() => toggleMutation.mutate(!court.isActive)}
+            onClick={() => toggleMutation.mutate(isActive ? 'inactive' : 'active')}
             className={cn(
               'rounded-lg px-2.5 py-1 text-xs font-medium transition-colors',
-              court.isActive
+              isActive
                 ? 'border border-gray-200 text-gray hover:border-q-red/30 hover:text-q-red'
                 : 'border border-gray-200 text-gray hover:border-green-300 hover:text-green-600',
             )}
           >
-            {court.isActive ? 'Desativar' : 'Ativar'}
+            {isActive ? 'Desativar' : 'Ativar'}
           </button>
         </div>
       </div>
@@ -185,19 +181,15 @@ export function CourtCard({ court, clubId }: Props) {
       <div className="mt-4 grid grid-cols-2 gap-3">
         <div className="rounded-xl bg-sand p-3">
           <p className="text-xs text-gray">Capacidade</p>
-          <p className="mt-0.5 font-semibold text-q-navy">{court.capacity} pessoas</p>
+          <p className="mt-0.5 font-semibold text-q-navy">{court.playerCapacity} pessoas</p>
         </div>
         <div className="rounded-xl bg-sand p-3">
           <p className="text-xs text-gray">Valor/hora</p>
           <p className="mt-0.5 font-semibold text-q-navy">
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(court.pricePerHour)}
+            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(court.pricePerHour))}
           </p>
         </div>
       </div>
-
-      {court.description && (
-        <p className="mt-3 line-clamp-2 text-xs text-gray">{court.description}</p>
-      )}
     </div>
   )
 }

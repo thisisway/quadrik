@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards } from '@nestjs/common'
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
 import { ClubsService } from './clubs.service'
 import { CreateClubDto } from './dto/create-club.dto'
@@ -49,5 +49,26 @@ export class ClubsController {
     @Body() body: { email: string; role: string },
   ) {
     return this.clubs.inviteMember(clubId, user.id, body.email, body.role)
+  }
+
+  @Patch(':clubId/members/:memberId')
+  @ApiOperation({ summary: 'Change a member role (OWNER/MANAGER only)' })
+  updateMember(
+    @Param('clubId') clubId: string,
+    @Param('memberId') memberId: string,
+    @CurrentUser() user: { id: string },
+    @Body('role') role: string,
+  ) {
+    return this.clubs.updateMember(clubId, memberId, user.id, role)
+  }
+
+  @Delete(':clubId/members/:memberId')
+  @ApiOperation({ summary: 'Remove a member from the club (OWNER/MANAGER only)' })
+  removeMember(
+    @Param('clubId') clubId: string,
+    @Param('memberId') memberId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.clubs.removeMember(clubId, memberId, user.id)
   }
 }

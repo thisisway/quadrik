@@ -78,6 +78,8 @@ export default function PlayersPage() {
   const qc = useQueryClient()
   const [showInvite, setShowInvite] = useState(false)
   const [search, setSearch] = useState('')
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null)
+  const [editingRole, setEditingRole] = useState('')
 
   const { data: members, isLoading } = useQuery<Member[]>({
     queryKey: ['members', clubId],
@@ -99,6 +101,26 @@ export default function PlayersPage() {
     },
   })
 
+  const updateRoleMutation = useMutation({
+    mutationFn: ({ memberId, role }: { memberId: string; role: string }) =>
+      api.patch(`/clubs/${clubId}/members/${memberId}`, { role }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['members', clubId] })
+      setEditingMemberId(null)
+      toast('Papel atualizado!', { variant: 'success' })
+    },
+    onError: (err) => toast((err as { message?: string }).message ?? 'Erro ao atualizar', { variant: 'error' }),
+  })
+
+  const removeMutation = useMutation({
+    mutationFn: (memberId: string) => api.delete(`/clubs/${clubId}/members/${memberId}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['members', clubId] })
+      toast('Membro removido.', { variant: 'success' })
+    },
+    onError: (err) => toast((err as { message?: string }).message ?? 'Erro ao remover', { variant: 'error' }),
+  })
+
   const {
     register,
     handleSubmit,
@@ -113,6 +135,7 @@ export default function PlayersPage() {
   })
 
   const activeCount = members?.filter((m) => m.status === 'active').length ?? 0
+  const isOwner = user?.role === 'OWNER'
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -209,50 +232,88 @@ export default function PlayersPage() {
           )}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100">
-                {['Membro', 'Papel', 'Status', 'Desde'].map((h) => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {filtered?.map((m) => (
-                <tr key={m.id} className="hover:bg-sand/40 transition-colors">
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <Avatar name={m.user.name} avatarUrl={m.user.avatarUrl} />
-                      <div className="min-w-0">
-                        <p className="font-medium text-q-navy truncate">{m.user.name}</p>
-                        <p className="text-xs text-gray truncate">{m.user.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5">
+        <div className="overflow-hidden rounded-2xl bg-white shadow-sm divide-y divide-gray-50">
+          {filtered?.map((m) => (
+            <div key={m.id} className="flex items-center gap-4 px-5 py-4 hover:bg-sand/40 transition-colors">
+              {/* Avatar + info */}
+              <Avatar name={m.user.name} avatarUrl={m.user.avatarUrl} />
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-q-navy truncate">{m.user.name}</p>
+                <p className="text-xs text-gray truncate">{m.user.email}</p>
+              </div>
+
+              {/* Role (editable) */}
+              <div className="shrink-0">
+                {editingMemberId === m.id ? (
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={editingRole}
+                      onChange={(e) => setEditingRole(e.target.value)}
+                      className="rounded-md border border-gray-200 px-2 py-1 text-xs text-q-navy focus:outline-none focus:ring-2 focus:ring-q-blue"
+                    >
+                      {ROLE_OPTIONS.map((r) => (
+                        <option key={r.value} value={r.value}>{r.label}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => updateRoleMutation.mutate({ memberId: m.id, role: editingRole })}
+                      className="rounded px-2 py-1 text-xs font-medium text-q-blue hover:bg-q-blue/10 transition-colors"
+                    >
+                      Salvar
+                    </button>
+                    <button
+                      onClick={() => setEditingMemberId(null)}
+                      className="rounded px-2 py-1 text-xs text-gray hover:text-q-navy transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
                     <Badge variant={roleVariant[m.role] ?? 'default'}>
                       {roleLabel[m.role] ?? m.role}
                     </Badge>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <Badge variant={m.status === 'active' ? 'success' : 'default'}>
-                      {m.status === 'active' ? 'Ativo' : 'Inativo'}
-                    </Badge>
-                  </td>
-                  <td className="px-5 py-3.5 text-gray">
-                    {new Date(m.joinedAt).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    {isOwner && m.role !== 'OWNER' && (
+                      <button
+                        onClick={() => {
+                          setEditingMemberId(m.id)
+                          setEditingRole(m.role)
+                        }}
+                        className="rounded p-1 text-gray hover:text-q-navy transition-colors"
+                        title="Alterar papel"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Status */}
+              <Badge variant={m.status === 'active' ? 'success' : 'warning'} className="shrink-0 hidden sm:inline-flex">
+                {m.status === 'active' ? 'Ativo' : m.status === 'invited' ? 'Convidado' : 'Inativo'}
+              </Badge>
+
+              {/* Remove button */}
+              {isOwner && m.role !== 'OWNER' && editingMemberId !== m.id && (
+                <button
+                  onClick={() => {
+                    if (confirm(`Remover ${m.user.name} da arena?`)) {
+                      removeMutation.mutate(m.id)
+                    }
+                  }}
+                  className="shrink-0 rounded p-1.5 text-gray hover:bg-q-red/10 hover:text-q-red transition-colors"
+                  title="Remover membro"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
