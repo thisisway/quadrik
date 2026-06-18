@@ -133,7 +133,11 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
 
       {/* User */}
       <div className="border-t border-white/10 p-3">
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2.5">
+        <Link
+          href="/app/profile"
+          onClick={() => onClose?.()}
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-white/8 transition-colors group"
+        >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-grad-sun text-xs font-bold text-white uppercase">
             {user?.name?.charAt(0) ?? '?'}
           </div>
@@ -142,7 +146,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             <p className="truncate text-xs text-white/40">{user?.role ?? 'OWNER'}</p>
           </div>
           <button
-            onClick={logout}
+            onClick={(e) => { e.preventDefault(); logout() }}
             title="Sair"
             className="shrink-0 rounded p-1 text-white/40 hover:text-white transition-colors"
           >
@@ -150,7 +154,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
           </button>
-        </div>
+        </Link>
       </div>
     </aside>
   )

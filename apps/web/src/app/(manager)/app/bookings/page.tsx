@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { BookingGrid } from '@/components/bookings/booking-grid'
 import { NewBookingModal } from '@/components/bookings/new-booking-modal'
+import { BookingDetailPanel } from '@/components/bookings/booking-detail-panel'
 import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
@@ -76,6 +77,7 @@ export default function BookingsPage() {
     courtId: string
     startTime: string
   }>({ courtId: '', startTime: '' })
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
 
   const { data: courts } = useQuery<Court[]>({
     queryKey: ['courts', clubId],
@@ -220,7 +222,14 @@ export default function BookingsPage() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Booking detail slide-over */}
+      <BookingDetailPanel
+        booking={selectedBooking}
+        clubId={clubId}
+        onClose={() => setSelectedBooking(null)}
+      />
+
+      {/* New booking modal */}
       <NewBookingModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -246,7 +255,7 @@ export default function BookingsPage() {
             courts={gridCourts}
             bookings={bookings ?? []}
             onSlotClick={(courtId, hour) => openModal(courtId, hour)}
-            onBookingClick={() => {/* detail panel later */}}
+            onBookingClick={(b) => setSelectedBooking(b)}
           />
         )
       ) : (

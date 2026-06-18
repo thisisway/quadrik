@@ -11,35 +11,8 @@ import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
+import { CourtCard, type Court } from '@/components/courts/court-card'
 import { cn } from '@/lib/utils'
-
-interface Court {
-  id: string
-  name: string
-  sport: string
-  surface: string
-  capacity: number
-  pricePerHour: number
-  isActive: boolean
-  description: string | null
-}
-
-const sportLabels: Record<string, string> = {
-  beach_tennis: 'Beach Tennis',
-  volleyball: 'Vôlei de Praia',
-  padel: 'Padel',
-  tennis: 'Tênis',
-  beach_soccer: 'Futevôlei',
-}
-
-const surfaceLabels: Record<string, string> = {
-  sand: 'Areia',
-  clay: 'Saibro',
-  cement: 'Cimento',
-  synthetic: 'Sintético',
-  wood: 'Madeira',
-}
 
 const schema = z.object({
   name: z.string().min(2, 'Nome obrigatório'),
@@ -51,47 +24,19 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
-function CourtCard({ court, onToggle }: { court: Court; onToggle: (id: string, active: boolean) => void }) {
-  return (
-    <div className={cn('rounded-2xl bg-white p-5 shadow-sm transition-opacity', !court.isActive && 'opacity-60')}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-q-navy truncate">{court.name}</h3>
-            <Badge variant={court.isActive ? 'success' : 'default'}>
-              {court.isActive ? 'Ativa' : 'Inativa'}
-            </Badge>
-          </div>
-          <p className="mt-0.5 text-sm text-gray">
-            {sportLabels[court.sport] ?? court.sport} · {surfaceLabels[court.surface] ?? court.surface}
-          </p>
-        </div>
-        <button
-          onClick={() => onToggle(court.id, !court.isActive)}
-          className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium border border-gray-200 text-gray hover:border-q-navy/30 hover:text-q-navy transition-colors"
-        >
-          {court.isActive ? 'Desativar' : 'Ativar'}
-        </button>
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <div className="rounded-xl bg-sand p-3">
-          <p className="text-xs text-gray">Capacidade</p>
-          <p className="mt-0.5 font-semibold text-q-navy">{court.capacity} pessoas</p>
-        </div>
-        <div className="rounded-xl bg-sand p-3">
-          <p className="text-xs text-gray">Valor/hora</p>
-          <p className="mt-0.5 font-semibold text-q-navy">
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(court.pricePerHour)}
-          </p>
-        </div>
-      </div>
-
-      {court.description && (
-        <p className="mt-3 text-xs text-gray line-clamp-2">{court.description}</p>
-      )}
-    </div>
-  )
+const sportLabels: Record<string, string> = {
+  beach_tennis: 'Beach Tennis',
+  volleyball: 'Vôlei de Praia',
+  padel: 'Padel',
+  tennis: 'Tênis',
+  beach_soccer: 'Futevôlei',
+}
+const surfaceLabels: Record<string, string> = {
+  sand: 'Areia',
+  clay: 'Saibro',
+  cement: 'Cimento',
+  synthetic: 'Sintético',
+  wood: 'Madeira',
 }
 
 export default function CourtsPage() {
@@ -115,12 +60,6 @@ export default function CourtsPage() {
       toast('Quadra criada com sucesso!', { variant: 'success' })
     },
     onError: (err) => toast((err as { message?: string }).message ?? 'Erro ao criar quadra', { variant: 'error' }),
-  })
-
-  const toggleMutation = useMutation({
-    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
-      api.patch(`/clubs/${clubId}/courts/${id}`, { isActive }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['courts', clubId] }),
   })
 
   const {
@@ -241,7 +180,7 @@ export default function CourtsPage() {
             <CourtCard
               key={court.id}
               court={court}
-              onToggle={(id, isActive) => toggleMutation.mutate({ id, isActive })}
+              clubId={clubId}
             />
           ))}
         </div>

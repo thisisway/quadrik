@@ -20,6 +20,7 @@ interface Booking {
   endTime: string
   status: string
   totalPrice: number
+  notes: string | null
   court: { id: string; name: string; sport: string }
   participants: Array<{ user: { id: string; name: string } }>
 }
