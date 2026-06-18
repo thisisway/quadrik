@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { NewBookingModal } from '@/components/bookings/new-booking-modal'
 import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
@@ -13,6 +14,7 @@ interface Court {
   id: string
   name: string
   sport: string
+  pricePerHour: number
 }
 
 interface Booking {
@@ -62,6 +64,7 @@ export default function BookingsPage() {
   const today = new Date()
   const [selectedDate, setSelectedDate] = useState(isoDate(today))
   const [selectedCourtId, setSelectedCourtId] = useState('')
+  const [showModal, setShowModal] = useState(false)
 
   const { data: courts } = useQuery<Court[]>({
     queryKey: ['courts', clubId],
@@ -115,7 +118,18 @@ export default function BookingsPage() {
           <h1 className="text-2xl font-bold text-q-navy">Reservas</h1>
           <p className="mt-1 text-sm text-gray">{bookings?.length ?? 0} reservas no dia selecionado</p>
         </div>
+        <Button variant="gradient" onClick={() => setShowModal(true)}>
+          + Nova reserva
+        </Button>
       </div>
+
+      <NewBookingModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        clubId={clubId}
+        courts={courts ?? []}
+        defaultDate={selectedDate}
+      />
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white p-4 shadow-sm">

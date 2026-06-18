@@ -41,6 +41,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>
   register: (name: string, email: string, password: string) => Promise<void>
   logout: () => void
+  updateClub: (clubId: string, role: string) => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -96,8 +97,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }, [])
 
+  const updateClub = useCallback((clubId: string, role: string) => {
+    setUser((prev) => {
+      if (!prev) return prev
+      const next = { ...prev, clubId, role }
+      localStorage.setItem(KEY, JSON.stringify(next))
+      return next
+    })
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout, updateClub }}>
       {children}
     </AuthContext.Provider>
   )

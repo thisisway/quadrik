@@ -65,7 +65,7 @@ const nav = [
   },
 ]
 
-export function Sidebar() {
+export function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
   const { user, logout } = useAuth()
 
@@ -87,6 +87,10 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.soon ? '#' : item.href}
+              onClick={(e) => {
+                if (item.soon) { e.preventDefault(); return }
+                onClose?.()
+              }}
               className={cn(
                 'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                 isActive
@@ -95,7 +99,6 @@ export function Sidebar() {
                     ? 'text-white/30 cursor-default'
                     : 'text-white/65 hover:bg-white/8 hover:text-white',
               )}
-              onClick={(e) => item.soon && e.preventDefault()}
             >
               <span className={cn('shrink-0', isActive ? 'text-white' : 'text-white/50 group-hover:text-white/80')}>
                 {item.icon}
