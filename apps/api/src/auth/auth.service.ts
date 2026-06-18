@@ -10,6 +10,8 @@ import * as bcrypt from 'bcrypt'
 import { PrismaService } from '../prisma/prisma.service'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
+import { UpdateProfileDto } from './dto/update-profile.dto'
+import { ChangePasswordDto } from './dto/change-password.dto'
 
 @Injectable()
 export class AuthService {
@@ -88,6 +90,27 @@ export class AuthService {
     })
     if (!user) throw new NotFoundException('User not found')
     return user
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { name: dto.name, phone: dto.phone ?? null },
+      select: { id: true, name: true, email: true, phone: true },
+    })
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } })
+    if (!user) throw new NotFoundException('User not found')
+
+    const valid = await bcrypt.compare(dto.currentPassword, user.passwordHash)
+    if (!valid) throw new UnauthorizedException('Current password is incorrect')
+
+    const newHash = await bcrypt.hash(dto.newPassword, 12)
+    await this.prisma.user.update({ where: { id: userId }, data: { passwordHash: newHash } })
+
+    return { message: 'Password changed successfully' }
   }
 
   private generateTokens(userId: string, clubId: string | null, role: string | null) {

@@ -63,12 +63,14 @@ export class BookingsService {
     return booking
   }
 
-  async findAll(clubId: string, filters: { courtId?: string; date?: string; status?: string }) {
+  async findAll(clubId: string, filters: { courtId?: string; date?: string; startDate?: string; endDate?: string; status?: string }) {
     const where: any = { clubId }
 
     if (filters.courtId) where.courtId = filters.courtId
     if (filters.status) where.status = filters.status
-    if (filters.date) {
+    if (filters.startDate && filters.endDate) {
+      where.startTime = { gte: new Date(filters.startDate), lt: new Date(filters.endDate) }
+    } else if (filters.date) {
       const day = new Date(filters.date)
       const nextDay = new Date(day)
       nextDay.setDate(nextDay.getDate() + 1)

@@ -23,19 +23,25 @@ export class BookingsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List bookings (filterable by court, date, status)' })
+  @ApiOperation({ summary: 'List bookings (filterable by court, date, status, or date range)' })
   @ApiQuery({ name: 'courtId', required: false })
-  @ApiQuery({ name: 'date', required: false, description: 'YYYY-MM-DD' })
+  @ApiQuery({ name: 'date', required: false, description: 'YYYY-MM-DD (single day)' })
+  @ApiQuery({ name: 'startDate', required: false, description: 'YYYY-MM-DD (range start, use with endDate)' })
+  @ApiQuery({ name: 'endDate', required: false, description: 'YYYY-MM-DD (range end, exclusive)' })
   @ApiQuery({ name: 'status', required: false })
   findAll(
     @Param('clubId') clubId: string,
     @Query('courtId') courtId?: string,
     @Query('date') date?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
     @Query('status') status?: string,
   ) {
     return this.bookings.findAll(clubId, {
       ...(courtId !== undefined && { courtId }),
       ...(date !== undefined && { date }),
+      ...(startDate !== undefined && { startDate }),
+      ...(endDate !== undefined && { endDate }),
       ...(status !== undefined && { status }),
     })
   }

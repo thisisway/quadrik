@@ -1,10 +1,12 @@
-import { Controller, Post, Get, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common'
+import { Controller, Post, Get, Patch, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
 import { Throttle } from '@nestjs/throttler'
 import { AuthService } from './auth.service'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
 import { RefreshTokenDto } from './dto/refresh-token.dto'
+import { UpdateProfileDto } from './dto/update-profile.dto'
+import { ChangePasswordDto } from './dto/change-password.dto'
 import { JwtAuthGuard } from './guards/jwt-auth.guard'
 import { AuthGuard } from '@nestjs/passport'
 import { CurrentUser } from './decorators/current-user.decorator'
@@ -43,5 +45,28 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current authenticated user' })
   me(@CurrentUser() user: { id: string }) {
     return this.auth.me(user.id)
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update current user profile' })
+  updateProfile(
+    @CurrentUser() user: { id: string },
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.auth.updateProfile(user.id, dto)
+  }
+
+  @Patch('me/password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change current user password' })
+  changePassword(
+    @CurrentUser() user: { id: string },
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.auth.changePassword(user.id, dto)
   }
 }
