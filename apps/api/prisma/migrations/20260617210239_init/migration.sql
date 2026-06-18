@@ -1,7 +1,4 @@
-﻿-- CreateSchema
-CREATE SCHEMA IF NOT EXISTS "public";
-
--- CreateEnum
+﻿-- CreateEnum
 CREATE TYPE "UserStatus" AS ENUM ('active', 'inactive', 'blocked');
 
 -- CreateEnum
