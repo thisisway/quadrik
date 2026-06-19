@@ -34,7 +34,8 @@ export class CourtsService {
   async update(clubId: string, courtId: string, userId: string, dto: UpdateCourtDto) {
     await this.assertStaff(clubId, userId)
     await this.findOne(clubId, courtId)
-    return this.prisma.court.update({ where: { id: courtId }, data: dto })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return this.prisma.court.update({ where: { id: courtId }, data: dto as any })
   }
 
   async remove(clubId: string, courtId: string, userId: string) {

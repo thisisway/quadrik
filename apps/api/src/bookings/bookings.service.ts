@@ -44,8 +44,8 @@ export class BookingsService {
         endTime: end,
         durationMinutes,
         price: dto.price,
-        paymentMethod: dto.paymentMethod,
-        notes: dto.notes,
+        paymentMethod: dto.paymentMethod ?? null,
+        notes: dto.notes ?? null,
         status: 'confirmed',
         participants: {
           create: [

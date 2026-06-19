@@ -8,6 +8,8 @@ import { AuthModule } from './auth/auth.module'
 import { ClubsModule } from './clubs/clubs.module'
 import { CourtsModule } from './courts/courts.module'
 import { BookingsModule } from './bookings/bookings.module'
+import { ClassesModule } from './classes/classes.module'
+import { PublicModule } from './public/public.module'
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { BookingsModule } from './bookings/bookings.module'
     ClubsModule,
     CourtsModule,
     BookingsModule,
+    ClassesModule,
+    PublicModule,
   ],
   controllers: [AppController],
   providers: [AppService],

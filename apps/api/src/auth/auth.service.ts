@@ -30,7 +30,7 @@ export class AuthService {
       data: {
         name: dto.name,
         email: dto.email,
-        phone: dto.phone,
+        phone: dto.phone ?? null,
         passwordHash,
         profile: { create: {} },
       },
